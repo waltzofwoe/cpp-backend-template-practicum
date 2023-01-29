@@ -1,8 +1,8 @@
 #pragma once
 #include <pqxx/pqxx>
 
-#include "postgres.h"
-#include "use_cases_impl.h"
+#include "app/use_cases_impl.h"
+#include "postgres/postgres.h"
 
 namespace bookypedia {
 

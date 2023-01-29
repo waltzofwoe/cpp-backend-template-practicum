@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "../src/tagged_uuid.h"
+#include "../src/util/tagged_uuid.h"
 
 using util::TaggedUUID;
 

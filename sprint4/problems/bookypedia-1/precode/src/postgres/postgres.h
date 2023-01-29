@@ -2,7 +2,7 @@
 #include <pqxx/connection>
 #include <pqxx/transaction>
 
-#include "author.h"
+#include "../domain/author.h"
 
 namespace postgres {
 

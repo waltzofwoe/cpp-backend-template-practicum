@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#include "menu.h"
-#include "postgres.h"
-#include "view.h"
+#include "menu/menu.h"
+#include "postgres/postgres.h"
+#include "ui/view.h"
 
 namespace bookypedia {
 

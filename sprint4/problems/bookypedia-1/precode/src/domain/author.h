@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "tagged_uuid.h"
+#include "../util/tagged_uuid.h"
 
 namespace domain {
 

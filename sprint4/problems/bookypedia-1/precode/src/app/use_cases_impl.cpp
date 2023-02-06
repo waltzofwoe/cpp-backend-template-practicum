@@ -1,6 +1,6 @@
 #include "use_cases_impl.h"
 
-#include "author.h"
+#include "../domain/author.h"
 
 namespace app {
 using namespace domain;

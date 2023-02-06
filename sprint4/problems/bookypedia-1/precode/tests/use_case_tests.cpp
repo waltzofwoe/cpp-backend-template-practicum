@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "../src/author.h"
-#include "../src/use_cases_impl.h"
+#include "../src/app/use_cases_impl.h"
+#include "../src/domain/author.h"
 
 namespace {
 

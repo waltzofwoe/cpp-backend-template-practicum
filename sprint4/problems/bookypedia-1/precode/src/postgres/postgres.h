@@ -2,20 +2,20 @@
 #include <pqxx/connection>
 #include <pqxx/transaction>
 
-#include "author.h"
+#include "../domain/author.h"
 
 namespace postgres {
 
 class AuthorRepositoryImpl : public domain::AuthorRepository {
 public:
-    explicit AuthorRepositoryImpl(pqxx::work& work)
-        : work_{work} {
+    explicit AuthorRepositoryImpl(pqxx::connection& connection)
+        : connection_{connection} {
     }
 
     void Save(const domain::Author& author) override;
 
 private:
-    pqxx::work& work_;
+    pqxx::connection& connection_;
 };
 
 class Database {
@@ -28,8 +28,7 @@ public:
 
 private:
     pqxx::connection connection_;
-    pqxx::work work_{connection_};
-    AuthorRepositoryImpl authors_{work_};
+    AuthorRepositoryImpl authors_{connection_};
 };
 
 }  // namespace postgres

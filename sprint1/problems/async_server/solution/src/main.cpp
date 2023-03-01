@@ -39,7 +39,17 @@ StringResponse MakeStringResponse(http::status status, std::string_view body, un
 
 StringResponse HandleRequest(StringRequest&& req) {
     // Подставьте сюда код из синхронной версии HTTP-сервера
-    return MakeStringResponse(http::status::ok, "OK"sv, req.version(), req.keep_alive());
+    if (req.method() != http::verb::get && 
+            req.method() != http::verb::head) 
+    {
+        auto response = MakeStringResponse(http::status::method_not_allowed, "Invalid method"sv, req.version(), req.keep_alive());
+
+        response.set(http::field::allow, "GET, HEAD");
+
+        return response;
+    }
+
+    return MakeStringResponse(http::status::ok, "Hello, "s.append(req.target().substr(1)), req.version(), req.keep_alive());
 }
 
 // Запускает функцию fn на n потоках, включая текущий

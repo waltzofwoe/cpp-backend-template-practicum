@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <boost/json.hpp>
+#include <iostream>
 
 using namespace std::literals;
 
@@ -22,6 +23,8 @@ std::string LoadFile(const std::filesystem::path& filePath) {
     std::ostringstream strbuf;
 
     strbuf << ifs.rdbuf();
+
+    return strbuf.str();
 }
 
 model::Game LoadGame(const std::filesystem::path& json_path) {
@@ -33,7 +36,7 @@ model::Game LoadGame(const std::filesystem::path& json_path) {
     auto json_str = LoadFile(json_path);
 
     auto json_obj = json::parse(json_str);
-    
+
     auto json_maps = json_obj.as_object().at("maps"s).as_array();
 
     for (const auto& json_map : json_maps) {
@@ -46,18 +49,21 @@ model::Game LoadGame(const std::filesystem::path& json_path) {
         auto json_roads = json_map.at("roads"s).as_array();
 
         for (const auto& json_road : json_roads) {
-            auto x0 = json_road.at("x0"s).to_number<int>();
 
-            auto y0 = json_road.at("y0"s).to_number<int>();
+            auto road_object = json_road.as_object();
 
-            if (json_road.at("x1"s).is_number()){
-                auto x1 = json_road.at("x1"s).to_number<int>();
+            auto x0 = road_object.at("x0"s).to_number<int>();
+
+            auto y0 = road_object.at("y0"s).to_number<int>();
+
+            if (road_object.if_contains("x1"s)){
+                auto x1 = road_object.at("x1"s).to_number<int>();
 
                 map.AddRoad({model::Road::HORIZONTAL, model::Point{x0, y0}, x1});
             }
 
-            if (json_road.at("y1"s).is_number()){
-                auto y1 = json_road.at("y1"s).to_number<int>();
+            if (road_object.if_contains("y1"s)) {
+                auto y1 = road_object.at("y1"s).to_number<int>();
 
                 map.AddRoad({model::Road::VERTICAL, model::Point{x0, y0}, y1});
             }

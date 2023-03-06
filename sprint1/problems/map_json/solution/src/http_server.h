@@ -6,6 +6,8 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 
+#define BOOST_BEAST_USE_STD_STRING_VIEW
+
 namespace http_server {
 
 namespace net = boost::asio;

@@ -3,9 +3,9 @@
 #include <boost/asio/dispatch.hpp>
 #include <iostream>
 
-namespace http_server
-{
-    void ReportError(beast::error_code ec, std::string_view what)
+namespace http_server {
+
+void ReportError(beast::error_code ec, std::string_view what)
     {
         std::cerr << what << ": "sv << ec.message() << std::endl;
     }
@@ -61,4 +61,5 @@ namespace http_server
 
         stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
     }
-} // namespace http_server
+
+}  // namespace http_server

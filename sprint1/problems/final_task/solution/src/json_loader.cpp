@@ -27,6 +27,15 @@ std::string LoadFile(const std::filesystem::path& filePath) {
     return strbuf.str();
 }
 
+std::vector<model::Map> LoadMaps(const json::value json_config)
+{
+    auto json_maps = json_config.as_object().at("maps"s);
+
+    auto maps = json::value_to<std::vector<model::Map>>(json_maps);
+
+    return maps;
+}
+
 model::Game LoadGame(const std::filesystem::path& json_path) {
     // Загрузить содержимое файла json_path, например, в виде строки
     // Распарсить строку как JSON, используя boost::json::parse
@@ -35,65 +44,83 @@ model::Game LoadGame(const std::filesystem::path& json_path) {
 
     auto json_str = LoadFile(json_path);
 
-    auto json_obj = json::parse(json_str);
+    auto json_config = json::parse(json_str);
 
-    auto json_maps = json_obj.as_object().at("maps"s).as_array();
+    auto maps = LoadMaps(json_config);
 
-    for (const auto& json_map : json_maps) {
-        auto id = model::Map::Id(json::value_to<std::string>(json_map.at("id"s)));
-
-        auto name = json::value_to<std::string>(json_map.at("name"s));
-
-        model::Map map{id, name};
-
-        auto json_roads = json_map.at("roads"s).as_array();
-
-        for (const auto& json_road : json_roads) {
-
-            auto road_object = json_road.as_object();
-
-            auto x0 = road_object.at("x0"s).to_number<int>();
-
-            auto y0 = road_object.at("y0"s).to_number<int>();
-
-            if (road_object.if_contains("x1"s)){
-                auto x1 = road_object.at("x1"s).to_number<int>();
-
-                map.AddRoad({model::Road::HORIZONTAL, model::Point{x0, y0}, x1});
-            }
-
-            if (road_object.if_contains("y1"s)) {
-                auto y1 = road_object.at("y1"s).to_number<int>();
-
-                map.AddRoad({model::Road::VERTICAL, model::Point{x0, y0}, y1});
-            }
-        }
-
-        auto json_buildings = json_map.at("buildings"s).as_array();
-
-        for(const auto& json_building : json_buildings) {
-            map.AddBuilding(model::Building
-                {model::Rectangle{
-                    model::Point{json_building.at("x"s).to_number<int>() ,json_building.at("y"s).to_number<int>()}, 
-                    model::Size{json_building.at("w"s).to_number<int>(), json_building.at("h"s).to_number<int>()}
-                }
-            });
-        }
-
-        auto json_offices = json_map.at("offices"s).as_array();
-
-        for (const auto& json_office : json_offices){
-            map.AddOffice({
-                model::Office::Id(json::value_to<std::string>(json_office.at("id"s))),
-                model::Point{json_office.at("x"s).to_number<int>(), json_office.at("y"s).to_number<int>()},
-                model::Offset{json_office.at("offsetX"s).to_number<int>(), json_office.at("offsetY"s).to_number<int>()}
-                });
-        }
-
+    for (const auto& map : maps) {
         game.AddMap(map);
     }
 
     return game;
 }
 
-}  // namespace json_loader
+} // namespace json_loader
+
+namespace model {
+Road tag_invoke(json::value_to_tag<Road>, const json::value &jv) {
+    auto road_object = jv.as_object();
+
+    auto x0 = road_object.at("x0"s).to_number<int>();
+
+    auto y0 = road_object.at("y0"s).to_number<int>();
+
+    if (road_object.if_contains("x1"s)){
+        auto x1 = road_object.at("x1"s).to_number<int>();
+
+        return {model::Road::HORIZONTAL, model::Point{x0, y0}, x1};
+    }
+    else if (road_object.if_contains("y1"s)) {
+        auto y1 = road_object.at("y1"s).to_number<int>();
+
+        return {model::Road::VERTICAL, model::Point{x0, y0}, y1};
+    }
+
+    throw std::runtime_error("Неправильный формат описания дороги"s);
+}
+
+Building tag_invoke(json::value_to_tag<Building>, const json::value& jv){
+    return model::Building{
+        model::Rectangle{
+            model::Point{jv.at("x"s).to_number<int>() ,jv.at("y"s).to_number<int>()}, 
+            model::Size{jv.at("w"s).to_number<int>(), jv.at("h"s).to_number<int>()}
+        }
+    };
+}
+
+Office tag_invoke(json::value_to_tag<Office>, const json::value& jv){
+    return {
+        model::Office::Id(json::value_to<std::string>(jv.at("id"s))),
+        model::Point{jv.at("x"s).to_number<int>(), jv.at("y"s).to_number<int>()},
+        model::Offset{jv.at("offsetX"s).to_number<int>(), jv.at("offsetY"s).to_number<int>()}
+    };
+}
+
+Map tag_invoke(json::value_to_tag<Map>, const json::value& jv){
+    auto id = Map::Id(json::value_to<std::string>(jv.at("id"s)));
+
+    auto name = json::value_to<std::string>(jv.at("name"s));
+
+    model::Map map{id, name};
+
+    auto roads = json::value_to<std::vector<Road>>(jv.at("roads"s));
+
+    for (const auto& road : roads) {
+        map.AddRoad(road);
+    }
+
+    auto buildings = json::value_to<std::vector<Building>>(jv.at("buildings"s));
+
+    for(const auto& building : buildings) {
+        map.AddBuilding(building);
+    }
+
+    auto offices = json::value_to<std::vector<Office>>(jv.at("offices"s));
+
+    for (const auto& office : offices){
+        map.AddOffice(office);
+    }
+
+    return map;
+}
+} // namespace model

@@ -1,8 +1,10 @@
 #include "request_handler.h"
+#include "json_loader.h"
 #include <boost/json.hpp>
 
 namespace json = boost::json;
 using namespace std::literals;
+
 
 namespace http_handler {
 
@@ -26,49 +28,8 @@ std::string RequestHandler::GetMapsJson(){
 }
 
 std::string RequestHandler::GetMapJson(const model::Map* map){
-    json::object obj{
-        {"id"s, *map->GetId()},
-        {"name"s, map->GetName()}
-    };
 
-    obj["roads"].emplace_array();
-
-    for(const auto& road : map->GetRoads()) {
-        json::object road_json {
-            {"x0"s, road.GetStart().x},
-            {"y0"s, road.GetStart().y},
-            {road.IsHorizontal() ? "x1" : "y1", road.IsHorizontal() ? road.GetEnd().x : road.GetEnd().y}
-        };
-
-        obj["roads"].as_array().emplace_back(road_json);
-    }
-
-    obj["buildings"].emplace_array();
-
-    for(const auto& building : map->GetBuildings()) {
-        json::object building_json {
-            {"x"s, building.GetBounds().position.x},
-            {"y"s, building.GetBounds().position.y},
-            {"w"s, building.GetBounds().size.width},
-            {"h"s, building.GetBounds().size.height}
-        };
-
-        obj["buildings"].as_array().emplace_back(building_json);
-    }
-
-    obj["offices"].emplace_array();
-
-    for(const auto& office : map->GetOffices()){
-        json::object office_json {
-            {"id"s, *office.GetId()},
-            {"x"s, office.GetPosition().x},
-            {"y"s, office.GetPosition().y},
-            {"offsetX"s, office.GetOffset().dx},
-            {"offsetY"s, office.GetOffset().dy}
-        };
-
-        obj["offices"].as_array().emplace_back(office_json);
-    }
+    auto obj = json::value_from(map);
 
     return json::serialize(obj);
 }

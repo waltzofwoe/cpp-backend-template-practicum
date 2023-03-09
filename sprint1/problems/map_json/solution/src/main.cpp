@@ -16,14 +16,14 @@ namespace sys = boost::system;
 
 namespace {
 
-// Запускает функцию fn на workers_count потоках, включая текущий
+// Запускает функцию fn на n потоках, включая текущий
 template <typename Fn>
-void RunWorkers(unsigned workers_count, const Fn& fn) {
-    workers_count = std::max(1u, workers_count);
+void RunWorkers(unsigned n, const Fn& fn) {
+    n = std::max(1u, n);
     std::vector<std::jthread> workers;
-    workers.reserve(workers_count - 1);
-    // Запускаем workers_count-1 рабочих потоков, выполняющих функцию fn
-    while (--workers_count) {
+    workers.reserve(n - 1);
+    // Запускаем n-1 рабочих потоков, выполняющих функцию fn
+    while (--n) {
         workers.emplace_back(fn);
     }
     fn();

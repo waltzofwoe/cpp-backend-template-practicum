@@ -1,7 +1,6 @@
 #include "json_loader.h"
 #include <fstream>
 #include <sstream>
-#include <boost/json.hpp>
 #include <iostream>
 
 using namespace std::literals;
@@ -68,15 +67,23 @@ Road tag_invoke(json::value_to_tag<Road>, const json::value &jv) {
     if (road_object.if_contains("x1"s)){
         auto x1 = road_object.at("x1"s).to_number<int>();
 
-        return {model::Road::HORIZONTAL, model::Point{x0, y0}, x1};
+        return {Road::HORIZONTAL, Point{x0, y0}, x1};
     }
     else if (road_object.if_contains("y1"s)) {
         auto y1 = road_object.at("y1"s).to_number<int>();
 
-        return {model::Road::VERTICAL, model::Point{x0, y0}, y1};
+        return {Road::VERTICAL, Point{x0, y0}, y1};
     }
 
     throw std::runtime_error("Неправильный формат описания дороги"s);
+}
+
+void tag_invoke(json::value_from_tag, json::value& jv, const Road& road){
+    jv = {
+        {"x0"s, road.GetStart().x},
+        {"y0"s, road.GetStart().y},
+        {road.IsHorizontal() ? "x1" : "y1", road.IsHorizontal() ? road.GetEnd().x : road.GetEnd().y}
+    };
 }
 
 Building tag_invoke(json::value_to_tag<Building>, const json::value& jv){
@@ -88,11 +95,30 @@ Building tag_invoke(json::value_to_tag<Building>, const json::value& jv){
     };
 }
 
+void tag_invoke(json::value_from_tag, json::value &jv, const Building &building){
+    jv = {
+        {"x"s, building.GetBounds().position.x},
+        {"y"s, building.GetBounds().position.y},
+        {"w"s, building.GetBounds().size.width},
+        {"h"s, building.GetBounds().size.height}
+    };
+}
+
 Office tag_invoke(json::value_to_tag<Office>, const json::value& jv){
     return {
         model::Office::Id(json::value_to<std::string>(jv.at("id"s))),
         model::Point{jv.at("x"s).to_number<int>(), jv.at("y"s).to_number<int>()},
         model::Offset{jv.at("offsetX"s).to_number<int>(), jv.at("offsetY"s).to_number<int>()}
+    };
+}
+
+void tag_invoke(json::value_from_tag, json::value &jv, const Office &office){
+    jv = {
+        {"id"s, *office.GetId()},
+        {"x"s, office.GetPosition().x},
+        {"y"s, office.GetPosition().y},
+        {"offsetX"s, office.GetOffset().dx},
+        {"offsetY"s, office.GetOffset().dy}
     };
 }
 
@@ -122,5 +148,20 @@ Map tag_invoke(json::value_to_tag<Map>, const json::value& jv){
     }
 
     return map;
+}
+
+void tag_invoke(json::value_from_tag, json::value &jv, const Map* map){
+    json::object obj = {
+        {"id"s, *map->GetId()},
+        {"name"s, map->GetName()}
+    };
+
+    obj["roads"s] = json::value_from(map->GetRoads());
+
+    obj["buildings"] = json::value_from(map->GetBuildings());
+
+    obj["offices"] = json::value_from(map->GetOffices());
+
+    jv= obj;
 }
 } // namespace model

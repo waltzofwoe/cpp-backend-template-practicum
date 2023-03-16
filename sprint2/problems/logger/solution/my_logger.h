@@ -57,11 +57,8 @@ public:
 
         log_file << GetTimeStamp();
 
-        for (const auto& arg : args...){
-            log_file << " "s;
-            log_file << arg;
-        }
-
+        ((out << ", " << args), ...);
+        
         log_file << std::endl;
     }
 

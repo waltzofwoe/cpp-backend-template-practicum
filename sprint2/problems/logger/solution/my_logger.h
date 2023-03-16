@@ -35,7 +35,7 @@ class Logger {
         const auto now = GetTime();
         const auto t_c = std::chrono::system_clock::to_time_t(now);
         std::ostringstream ss;
-        ss << "/var/log/sample_log_"s << std::put_time(std::localtime(&t_c), "%Y_%m_%d");
+        ss << "/var/log/sample_log_"s << std::put_time(std::localtime(&t_c), "%Y_%m_%d") << ".log"s;
         return ss.str();
     }
 

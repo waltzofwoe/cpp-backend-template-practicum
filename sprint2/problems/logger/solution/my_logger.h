@@ -55,9 +55,9 @@ public:
 
         std::ofstream log_file { GetFileTimeStamp(), std::ios::app };
 
-        log_file << GetTimeStamp();
+        log_file << GetTimeStamp() << ": "sv;
 
-        ((log_file << " " << args), ...);
+        ((log_file << " "sv << args), ...);
 
         log_file << std::endl;
     }

@@ -55,16 +55,13 @@ int main(int argc, const char* argv[]) {
         });
 
         // 4. Создаём обработчик HTTP-запросов и связываем его с моделью игры
-
-        auto handler = std::make_shared<http_handler::RequestHandler>(
-            game,
-            http_handler::StaticFileRequestHandler(argv[2]));
+        http_handler::RequestHandler handler{game, http_handler::StaticFileRequestHandler(argv[2])};
 
         // 5. Запустить обработчик HTTP-запросов, делегируя их обработчику запросов
         const auto address = net::ip::make_address("0.0.0.0");
         constexpr net::ip::port_type port = 8080;
 
-        http_server::ServeHttp(ioc, {address, port}, handler);
+        http_server::ServeHttp(ioc, {address, port}, std::forward<http_handler::RequestHandler>(handler));
         
         // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
         std::cout << "Server has started..."sv << std::endl;

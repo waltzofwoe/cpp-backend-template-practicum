@@ -61,6 +61,12 @@ class StaticFileRequestHandler {
 public:
     StaticFileRequestHandler(fs::path wwwroot);
 
+    StaticFileRequestHandler(const StaticFileRequestHandler&) =delete;
+    StaticFileRequestHandler& operator=(const StaticFileRequestHandler&) = delete;
+
+    StaticFileRequestHandler(StaticFileRequestHandler&& other):
+        wwwroot_{other.wwwroot_} {}
+
     template <typename Body, typename Allocator>
     http::message_generator Handle(http::request<Body, http::basic_fields<Allocator>>&& req) {
         if( req.method() != http::verb::get &&
@@ -141,6 +147,10 @@ public:
 
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
+
+    RequestHandler(RequestHandler&& other) : 
+        game_(other.game_),
+        static_file_handler_(std::move(other.static_file_handler_))  {}
 
     template <typename Body, typename Allocator>
     http::message_generator operator()(http::request<Body, http::basic_fields<Allocator>>&& req) {

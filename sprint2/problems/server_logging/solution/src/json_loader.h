@@ -4,6 +4,7 @@
 #include <boost/json.hpp>
 
 #include "model.h"
+#include "dto.h"
 
 namespace json = boost::json;
 
@@ -29,4 +30,9 @@ namespace model {
     Map tag_invoke(json::value_to_tag<Map>, const json::value& jv);
 
     void tag_invoke(json::value_from_tag, json::value& jv, const Map* map);
+}
+
+namespace dto {
+    void tag_invoke(json::value_from_tag, json::value& jv, const MapRegistryDto& dto);
+    void tag_invoke(json::value_from_tag, json::value& jv, const ErrorDto& dto);
 }

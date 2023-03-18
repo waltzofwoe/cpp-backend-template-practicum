@@ -21,6 +21,7 @@ add_executable(game_server
 	src/sdk.h
 	src/model.h
 	src/model.cpp
+	src/dto.h
 	src/tagged.h
 	src/boost_json.cpp
 	src/json_loader.h

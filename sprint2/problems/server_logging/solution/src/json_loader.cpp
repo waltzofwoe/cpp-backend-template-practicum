@@ -165,3 +165,19 @@ void tag_invoke(json::value_from_tag, json::value &jv, const Map* map){
     jv= obj;
 }
 } // namespace model
+
+namespace dto {
+    void tag_invoke(json::value_from_tag, json::value& jv, const MapRegistryDto& dto){
+        jv = {
+            {"id"s, dto.Id},
+            {"name"s, dto.Name}
+        };
+    };
+
+    void tag_invoke(json::value_from_tag, json::value& jv, const ErrorDto& dto){
+        jv= {
+            {"code", dto.Code},
+            {"message", dto.Message}
+        };
+    };
+} //namespace dto

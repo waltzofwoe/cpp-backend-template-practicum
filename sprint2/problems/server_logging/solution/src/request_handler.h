@@ -5,10 +5,12 @@
 
 #include "http_server.h"
 #include "model.h"
+#include "dto.h"
 #include "file_utils.h"
 
 #define BOOST_URL_NO_LIB
 #include <boost/url.hpp>
+#include <boost/json.hpp>
 
 #define BOOST_BEAST_USE_STD_STRING_VIEW
 
@@ -18,6 +20,7 @@ namespace http = beast::http;
 namespace url = boost::urls;
 namespace fs = std::filesystem;
 namespace sys = boost::system;
+namespace json = boost::json;
 
 using StringResponse = http::response<http::string_body>;
 using EmptyResponse = http::response<http::empty_body>;
@@ -57,6 +60,23 @@ http::message_generator InternalError(const http::request<Body, http::basic_fiel
     return response;
 };
 
+template <typename Body, typename Allocator, typename Object>
+http::message_generator Json(
+    const http::request<Body, http::basic_fields<Allocator>>& request, 
+    Object object,
+    http::status status_code = http::status::ok){
+    auto jv = json::value_from(object);
+
+    auto json_string = json::serialize(jv);
+
+    StringResponse response {status_code, request.version()};
+    response.set(http::field::content_type, "application/json");
+    response.body() = json_string;
+    response.keep_alive(request.keep_alive());
+    response.prepare_payload();
+    return response;
+}
+
 class StaticFileRequestHandler {
 public:
     StaticFileRequestHandler(fs::path wwwroot);
@@ -68,7 +88,7 @@ public:
         wwwroot_{other.wwwroot_} {}
 
     template <typename Body, typename Allocator>
-    http::message_generator Handle(http::request<Body, http::basic_fields<Allocator>>&& req) {
+    http::message_generator operator()(http::request<Body, http::basic_fields<Allocator>>&& req) {
         if( req.method() != http::verb::get &&
             req.method() != http::verb::head)
             return BadRequest(req, "Method not allowed"s);
@@ -153,49 +173,44 @@ public:
         static_file_handler_(std::move(other.static_file_handler_))  {}
 
     template <typename Body, typename Allocator>
-    http::message_generator operator()(http::request<Body, http::basic_fields<Allocator>>&& req) {
-        // Обработать запрос request и отправить ответ, используя send
-
-        if (!req.target().starts_with("/api/")){
-            return static_file_handler_.Handle(std::move(req));
+    http::message_generator operator()(http::request<Body, http::basic_fields<Allocator>>&& request) {
+        if (!request.target().starts_with("/api/"s)){
+            return static_file_handler_(std::move(request));
         }
 
-        if (req.target() == "/api/v1/maps"){
-            // отправить список карт
-            auto maps = GetMapsJson();
+        // отправить список карт
+        if (request.target() == "/api/v1/maps"s){
+            // получить список карт
+            auto maps = game_.GetMaps();
 
-            return MakeJsonResponse(http::status::ok, req.version(), maps);
+            // спроецировать в DTO
+            std::vector<dto::MapRegistryDto> maps_dto(maps.size());
+
+            std::transform(maps.begin(), maps.end(), maps_dto.begin(), [](model::Map arg){return dto::MapRegistryDto(std::move(arg));});
+
+            // отправить массив DTO
+            return Json(request, maps_dto);
         }
 
-        if (req.target().starts_with("/api/v1/maps/"s)){
-            // отправить карту
-
-            auto map_name = std::string(req.target().substr("/api/v1/maps/"s.size()));
+        // отправить карту
+        if (request.target().starts_with("/api/v1/maps/"s)){
+            auto map_name = std::string(request.target().substr("/api/v1/maps/"s.size()));
 
             auto map = game_.FindMap(model::Map::Id{map_name});
 
             if (map == nullptr){
-                return MakeErrorResponse(http::status::not_found, req.version(), "mapNotFound"s, "Map not found"s);
+                return Json(request, dto::ErrorDto {"mapNotFound"s, "Map not found"s}, http::status::not_found);
             }
 
-            auto map_json = GetMapJson(map);
-
-            return MakeJsonResponse(http::status::ok, req.version(), map_json);
+            return Json(request, map);
         }
 
-        return MakeErrorResponse(http::status::bad_request, req.version(), "badRequest"s, "Bad request");
+        // отправить BadRequest
+        return Json(request, dto::ErrorDto {"badRequest"s, "Bad request"s}, http::status::bad_request);
     }
 
 private:
     model::Game& game_;
     StaticFileRequestHandler static_file_handler_;
-
-    std::string GetMapsJson();
-
-    std::string GetMapJson(const model::Map* map);
-
-    JsonResponse MakeJsonResponse(http::status status, unsigned http_version, std::string_view response);
-
-    JsonResponse MakeErrorResponse(http::status status, unsigned http_version, std::string_view code, std::string_view message);
 };
 }  // namespace http_handler

@@ -8,6 +8,8 @@
 
 #include "json_loader.h"
 #include "request_handler.h"
+#include "logger.h"
+#include <boost/log/trivial.hpp>
 
 using namespace std::literals;
 namespace net = boost::asio;
@@ -65,6 +67,10 @@ int main(int argc, const char* argv[]) {
         
         // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
         std::cout << "Server has started..."sv << std::endl;
+
+        logger::InitBoostLogs();
+
+        BOOST_LOG_TRIVIAL(info) << "Server has started..."sv;
 
         // 6. Запускаем обработку асинхронных операций
         RunWorkers(std::max(1u, num_threads), [&ioc] {

@@ -41,6 +41,14 @@ namespace http_server {
         HandleRequest(std::move(request_));
     }
 
+    tcp::endpoint SessionBase::GetEndpoint() const{
+        return stream_.socket().local_endpoint();
+    }
+
+    const SessionBase::HttpRequest& SessionBase::GetRequest() const {
+        return request_;
+    }
+
     void SessionBase::Write(http::message_generator&& response)
     {
         bool keep_alive = response.keep_alive();

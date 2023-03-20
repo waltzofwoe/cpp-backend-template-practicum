@@ -7,10 +7,13 @@
 #include "model.h"
 #include "dto.h"
 #include "file_utils.h"
+#include "logger.h"
 
 #define BOOST_URL_NO_LIB
 #include <boost/url.hpp>
 #include <boost/json.hpp>
+#include <boost/log/utility/manipulators/add_value.hpp>
+#include <boost/log/trivial.hpp>
 
 #define BOOST_BEAST_USE_STD_STRING_VIEW
 
@@ -21,6 +24,7 @@ namespace url = boost::urls;
 namespace fs = std::filesystem;
 namespace sys = boost::system;
 namespace json = boost::json;
+namespace logs = boost::log;
 
 using StringResponse = http::response<http::string_body>;
 using EmptyResponse = http::response<http::empty_body>;
@@ -213,4 +217,5 @@ private:
     model::Game& game_;
     StaticFileRequestHandler static_file_handler_;
 };
+
 }  // namespace http_handler

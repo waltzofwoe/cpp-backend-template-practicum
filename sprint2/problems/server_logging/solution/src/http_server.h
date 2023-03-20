@@ -5,6 +5,15 @@
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/utility/manipulators/add_value.hpp>
+#include <boost/json.hpp>
+#include <chrono>
+#include "logger.h"
+
+namespace json = boost::json;
+namespace logs = boost::log;
+namespace chrono = std::chrono;
 
 #define BOOST_BEAST_USE_STD_STRING_VIEW
 
@@ -32,6 +41,10 @@ protected:
     explicit SessionBase(tcp::socket&& socket) : stream_(std::move(socket)){}
 
     ~SessionBase() = default;
+
+    tcp::endpoint GetEndpoint() const;
+
+    const HttpRequest& GetRequest() const;
 
     void Write(http::message_generator &&response);
 
@@ -70,6 +83,15 @@ private:
     }
 
     void HandleRequest(HttpRequest&& request) override {
+        json::value request_data {
+            {"ip"s, GetEndpoint().address().to_string()},
+            {"URI"s, GetRequest().target()},
+            {"method"s, http::to_string(GetRequest().method())}
+        };
+
+        BOOST_LOG_TRIVIAL(info) << logs::add_value(logger::additional_data, request_data)
+                                << "request received"s;
+
         Write(request_handler_(std::move(request)));
     }
 };

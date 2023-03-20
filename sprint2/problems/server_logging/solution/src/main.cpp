@@ -9,11 +9,13 @@
 #include "json_loader.h"
 #include "request_handler.h"
 #include "logger.h"
+#include <boost/log/utility/manipulators/add_value.hpp>
 #include <boost/log/trivial.hpp>
 
 using namespace std::literals;
 namespace net = boost::asio;
 namespace sys = boost::system;
+namespace logs = boost::log;
 
 
 namespace {
@@ -70,7 +72,13 @@ int main(int argc, const char* argv[]) {
 
         logger::InitBoostLogs();
 
-        BOOST_LOG_TRIVIAL(info) << "Server has started..."sv;
+        json::value custom_data {
+            {"port"s, port},
+            {"address"s, address.to_string()}
+        };
+
+        BOOST_LOG_TRIVIAL(info) << logs::add_value(logger::additional_data, custom_data)
+                                << "Server has started..."sv;
 
         // 6. Запускаем обработку асинхронных операций
         RunWorkers(std::max(1u, num_threads), [&ioc] {

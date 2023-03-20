@@ -17,16 +17,22 @@ using namespace std::literals;
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
 
+
 namespace logger{
 void JsonFormatter(const logs::record_view& record, logs::formatting_ostream& strm) {
     auto ts = record[timestamp];
 
     std::string message = *record[expr::smessage];
 
-    json::value jv = {
+    json::object jv = {
         {"timestamp", boost::posix_time::to_iso_extended_string(*ts)},
         {"message", message}
     };
+
+    if (!record[additional_data].empty())
+    {
+        jv["data"] = *record[additional_data];
+    }
 
     auto json_output = json::serialize(jv);
 

@@ -10,4 +10,10 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(additional_data, "AdditionalData", boost::json::valu
 
 void InitBoostLogs();
 
+void Info(const std::string& message, boost::json::value custom_data);
+
+void Error(const std::string& message, boost::json::value cusom_data);
+
+void Fatal(const std::string& message, boost::json::value custom_data);
+
 } //namespace logger

@@ -77,15 +77,23 @@ int main(int argc, const char* argv[]) {
             {"address"s, address.to_string()}
         };
 
-        BOOST_LOG_TRIVIAL(info) << logs::add_value(logger::additional_data, custom_data)
-                                << "Server has started..."sv;
+        logger::Info("Server has started..."s, custom_data);
 
         // 6. Запускаем обработку асинхронных операций
         RunWorkers(std::max(1u, num_threads), [&ioc] {
             ioc.run();
         });
+
+        logger::Info("server exited"s, { {"code", 0 }});
     } catch (const std::exception& ex) {
-        std::cerr << ex.what() << std::endl;
+        
+        json::value custom_data {
+            {"code"s, EXIT_FAILURE},
+            {"exception"s, ex.what()}
+        };
+
+        logger::Fatal("server exited"s, custom_data);
+
         return EXIT_FAILURE;
     }
 }

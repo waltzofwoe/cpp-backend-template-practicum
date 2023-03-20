@@ -7,6 +7,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/date_time.hpp>
 #include <boost/json.hpp>
+#include <boost/log/utility/manipulators/add_value.hpp>
 
 namespace logs = boost::log;
 namespace expr = boost::log::expressions;
@@ -48,4 +49,20 @@ void InitBoostLogs(){
         logs::keywords::format = &JsonFormatter
     );
 };
+
+void Info(const std::string& message, boost::json::value custom_data){
+    BOOST_LOG_TRIVIAL(info) << logs::add_value(logger::additional_data, custom_data)
+                            << message;
+}
+
+void Error(const std::string& message, boost::json::value custom_data){
+    BOOST_LOG_TRIVIAL(error) << logs::add_value(logger::additional_data, custom_data)
+                             << message;
+}
+
+void Fatal(const std::string& message, boost::json::value custom_data){
+    BOOST_LOG_TRIVIAL(fatal) << logs::add_value(logger::additional_data, custom_data)
+                             << message;
+}
+
 }

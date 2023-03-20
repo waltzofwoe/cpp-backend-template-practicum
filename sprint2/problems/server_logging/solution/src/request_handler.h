@@ -12,8 +12,6 @@
 #define BOOST_URL_NO_LIB
 #include <boost/url.hpp>
 #include <boost/json.hpp>
-#include <boost/log/utility/manipulators/add_value.hpp>
-#include <boost/log/trivial.hpp>
 
 #define BOOST_BEAST_USE_STD_STRING_VIEW
 
@@ -35,7 +33,7 @@ using namespace std::literals;
 std::string_view mime_type(fs::path path);
 
 template <typename Body, typename Allocator>
-http::message_generator BadRequest(const http::request<Body, http::basic_fields<Allocator>>& request, const std::string& message) {
+StringResponse BadRequest(const http::request<Body, http::basic_fields<Allocator>>& request, const std::string& message) {
     StringResponse response { http::status::bad_request, request.version()};
     response.set(http::field::content_type, "text/plain");
     response.keep_alive(request.keep_alive());
@@ -45,7 +43,7 @@ http::message_generator BadRequest(const http::request<Body, http::basic_fields<
 };
 
 template <typename Body, typename Allocator>
-http::message_generator NotFound(const http::request<Body, http::basic_fields<Allocator>>& request, const std::string& message) {
+StringResponse NotFound(const http::request<Body, http::basic_fields<Allocator>>& request, const std::string& message) {
     StringResponse response { http::status::not_found, request.version()};
     response.set(http::field::content_type, "text/plain");
     response.keep_alive(request.keep_alive());
@@ -55,7 +53,7 @@ http::message_generator NotFound(const http::request<Body, http::basic_fields<Al
 };
 
 template <typename Body, typename Allocator>
-http::message_generator InternalError(const http::request<Body, http::basic_fields<Allocator>>& request, const std::string& message) {
+StringResponse InternalError(const http::request<Body, http::basic_fields<Allocator>>& request, const std::string& message) {
     StringResponse response { http::status::internal_server_error, request.version()};
     response.set(http::field::content_type, "text/plain");
     response.keep_alive(request.keep_alive());
@@ -65,7 +63,7 @@ http::message_generator InternalError(const http::request<Body, http::basic_fiel
 };
 
 template <typename Body, typename Allocator, typename Object>
-http::message_generator Json(
+StringResponse Json(
     const http::request<Body, http::basic_fields<Allocator>>& request, 
     Object object,
     http::status status_code = http::status::ok){
@@ -91,15 +89,19 @@ public:
     StaticFileRequestHandler(StaticFileRequestHandler&& other):
         wwwroot_{other.wwwroot_} {}
 
-    template <typename Body, typename Allocator>
-    http::message_generator operator()(http::request<Body, http::basic_fields<Allocator>>&& req) {
+    template <typename Body, typename Allocator, typename ResponseWriter>
+    void operator()(http::request<Body, http::basic_fields<Allocator>>&& req, ResponseWriter&& writer) {
         if( req.method() != http::verb::get &&
-            req.method() != http::verb::head)
-            return BadRequest(req, "Method not allowed"s);
+            req.method() != http::verb::head){
+            writer(std::move(BadRequest(req, "Method not allowed"s)));
+            return;
+        }
 
         if(req.target().empty() ||
-            req.target()[0] != '/')
-            return BadRequest(req, "Bad request"s);
+            req.target()[0] != '/'){
+            writer(std::move(BadRequest(req, "Bad request"s)));
+            return;
+        }
 
         url::decode_view decoded_target(req.target());
 
@@ -117,7 +119,8 @@ public:
         }
 
         if (!IsSubPath(file_path, wwwroot_)){
-            return BadRequest(req, "Incorrent path"s);
+            writer(std::move(BadRequest(req, "Incorrent path"s)));
+            return;
         }
 
         http::file_body::value_type file_body;
@@ -127,11 +130,13 @@ public:
         file_body.open(file_path.c_str(), beast::file_mode::scan, ec);
 
         if (ec == sys::errc::no_such_file_or_directory){
-            return NotFound(req, "File not found"s);
+            writer(std::move(NotFound(req, "File not found"s)));
+            return;
         }
 
         if (ec) {
-            return InternalError(req, ec.message());
+            writer(std::move(InternalError(req, ec.message())));
+            return;
         }
 
         auto const size = file_body.size();
@@ -141,7 +146,9 @@ public:
             response.set(http::field::content_type, mime_type(file_path));
             response.content_length(size);
             response.keep_alive(req.keep_alive());
-            return response;
+            
+            writer(std::move(response));
+            return;
         }
 
         FileResponse response { 
@@ -152,7 +159,7 @@ public:
         response.set(http::field::content_type, mime_type(file_path));
         response.content_length(size);
         response.keep_alive(req.keep_alive());
-        return response;
+        writer(std::move(response));
     }
 private:
     fs::path wwwroot_;
@@ -176,10 +183,11 @@ public:
         game_(other.game_),
         static_file_handler_(std::move(other.static_file_handler_))  {}
 
-    template <typename Body, typename Allocator>
-    http::message_generator operator()(http::request<Body, http::basic_fields<Allocator>>&& request) {
+    template <typename Body, typename Allocator, typename ResponseWriter>
+    void operator()(http::request<Body, http::basic_fields<Allocator>>&& request, ResponseWriter&& writer) {
         if (!request.target().starts_with("/api/"s)){
-            return static_file_handler_(std::move(request));
+            static_file_handler_(std::move(request), std::forward<ResponseWriter>(writer));
+            return;
         }
 
         // отправить список карт
@@ -193,7 +201,8 @@ public:
             std::transform(maps.begin(), maps.end(), maps_dto.begin(), [](model::Map arg){return dto::MapRegistryDto(std::move(arg));});
 
             // отправить массив DTO
-            return Json(request, maps_dto);
+            writer(std::move(Json(request, maps_dto)));
+            return;
         }
 
         // отправить карту
@@ -203,14 +212,16 @@ public:
             auto map = game_.FindMap(model::Map::Id{map_name});
 
             if (map == nullptr){
-                return Json(request, dto::ErrorDto {"mapNotFound"s, "Map not found"s}, http::status::not_found);
+                writer(std::move(Json(request, dto::ErrorDto {"mapNotFound"s, "Map not found"s}, http::status::not_found)));
+                return;
             }
 
-            return Json(request, map);
+            writer(std::move(Json(request, map)));
+            return;
         }
 
         // отправить BadRequest
-        return Json(request, dto::ErrorDto {"badRequest"s, "Bad request"s}, http::status::bad_request);
+        writer(std::move(Json(request, dto::ErrorDto {"badRequest"s, "Bad request"s}, http::status::bad_request)));
     }
 
 private:

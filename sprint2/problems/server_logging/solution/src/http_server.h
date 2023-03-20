@@ -5,8 +5,6 @@
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/utility/manipulators/add_value.hpp>
 #include <boost/json.hpp>
 #include <chrono>
 #include "logger.h"
@@ -46,12 +44,40 @@ protected:
 
     const HttpRequest& GetRequest() const;
 
-    void Write(http::message_generator &&response);
+    //void Write(http::message_generator &&response);
+
+    template <typename Body, typename Fields>
+    void Write(http::response<Body, Fields>&& response) {
+        bool keep_alive = response.keep_alive();
+
+        auto end_time = chrono::system_clock::now();
+
+        auto response_time = chrono::duration_cast<chrono::milliseconds>(end_time - request_time_).count();
+        
+        json::value custom_data {
+            {"code"s, response.result_int()},
+            {"content_type"s, response[http::field::content_type]},
+            {"response_time"s, response_time}
+        };
+
+        logger::Info("response sent", custom_data);
+
+        auto safe_response = std::make_shared<http::response<Body, Fields>>(std::move(response));
+
+        auto self = GetSharedThis();
+
+        http::async_write(stream_, *safe_response,
+            [safe_response, self](beast::error_code ec, std::size_t bytes_written)
+            {
+                self->OnWrite(safe_response->need_eof(), ec, bytes_written);
+            });
+    }
 
 private:
     beast::tcp_stream stream_;
     beast::flat_buffer buffer_;
     HttpRequest request_;
+    chrono::system_clock::time_point request_time_;
 
     void Read();
 
@@ -89,10 +115,11 @@ private:
             {"method"s, http::to_string(GetRequest().method())}
         };
 
-        BOOST_LOG_TRIVIAL(info) << logs::add_value(logger::additional_data, request_data)
-                                << "request received"s;
+        logger::Info("request received"s, request_data);
 
-        Write(request_handler_(std::move(request)));
+        request_handler_(std::move(request), [self=this->shared_from_this()](auto&& response){
+            self->Write(std::move(response));
+        });
     }
 };
 

@@ -67,10 +67,7 @@ int main(int argc, const char* argv[]) {
 
         http_server::ServeHttp(ioc, {address, port}, std::forward<http_handler::RequestHandler>(handler));
         
-        // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
-        std::cout << "Server has started..."sv << std::endl;
-
-        // инициализация логгера
+                // инициализация логгера
         logger::InitBoostLogs();
 
         json::value custom_data {
@@ -79,7 +76,7 @@ int main(int argc, const char* argv[]) {
         };
 
         // Запись о том, что сервер запущен и готов обрабатывать запросы
-        logger::Info("server started"s, custom_data);
+        logger::Info("server has started..."s, custom_data);
 
         // 6. Запускаем обработку асинхронных операций
         RunWorkers(std::max(1u, num_threads), [&ioc] {

@@ -46,6 +46,7 @@ void InitBoostLogs(){
 
     logs::add_console_log(
         std::cout,
+        logs::keywords::auto_flush = true,
         logs::keywords::format = &JsonFormatter
     );
 };

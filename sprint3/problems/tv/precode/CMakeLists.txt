@@ -15,6 +15,7 @@ add_executable(app
 
 add_executable(catch_tv_tests
 	tests/catch_tv_tests.cpp
+	tests/catch_controller_tests.cpp
 	src/tv.h
 	src/menu.h
 	src/controller.h
@@ -23,6 +24,7 @@ target_link_libraries(catch_tv_tests PRIVATE CONAN_PKG::catch2)
 
 add_executable(google_tv_tests
 	tests/google_tv_tests.cpp
+	tests/google_controller_tests.cpp
 	src/tv.h
 	src/menu.h
 	src/controller.h
@@ -31,6 +33,8 @@ target_link_libraries(google_tv_tests PRIVATE CONAN_PKG::gtest)
 
 add_executable(boost_tv_tests
 	tests/boost_tv_tests.cpp
+	tests/boost_controller_tests.cpp
+	tests/boost_test_helpers.h
 	src/tv.h
 	src/menu.h
 	src/controller.h

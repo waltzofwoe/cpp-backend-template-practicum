@@ -46,6 +46,20 @@ jobs:
         env:
           DELIVERY_APP: ${{ github.workspace }}/sprint1/problems/sync_server/solution/build/bin/hello
 
+      - name: build tests sprint1 sum
+        run: |
+          cd sprint1/problems/sum/solution
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+      - name: run tests sprint1 sum
+        run: |
+          answer=$(echo 23 19 | ./sprint1/problems/sum/solution/build/bin/sum)
+          if [ "$answer" != "42" ]; then
+            exit 1
+          fi
+
       - name: build tests sprint1 restaurant_single_threaded
         run: |
           cd sprint1/problems/restaurant_single_threaded/solution

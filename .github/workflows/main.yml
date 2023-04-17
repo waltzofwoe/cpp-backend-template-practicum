@@ -39,7 +39,7 @@ jobs:
           pip uninstall conan -y
           pip install -U conan==1.59.0
           cp -R /home/forconan/.conan /github/home/.conan
-
+          
       - name: run tests sprint1 sum
         run: |
           cd cpp-backend-tests-practicum/scripts/sprint1

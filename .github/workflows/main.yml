@@ -29,6 +29,21 @@ jobs:
       - name: Install dependencies
         run: |
           cp -R /home/forconan/.conan /github/home/.conan
+
+      - name: build tests sprint1 sum
+        run: |
+          cd sprint1/problems/sum/solution
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+      - name: run tests sprint1 sum
+        run: |
+          answer=$(echo 23 19 | ./sprint1/problems/sum/solution/build/sum)
+          if [ "$answer" != "42" ]; then
+            exit 1
+          fi
+
       - name: build tests sprint1 sync_server
         run: |
           cd sprint1/problems/sync_server/solution
@@ -40,7 +55,6 @@ jobs:
           echo "COMMAND_RUN=${DELIVERY_APP}" >> $GITHUB_ENV
         env:
           DELIVERY_APP: ${{ github.workspace }}/sprint1/problems/sync_server/solution/build/bin/hello
-
       - name: run tests sprint1 sync_server
         run: pytest --junitxml=${GITHUB_WORKSPACE}/sync_server.xml cpp-backend-tests-practicum/tests/test_l02_hello_beast.py
         env:

@@ -74,6 +74,7 @@ StringResponse Json(
 
     StringResponse response {status_code, request.version()};
     response.set(http::field::content_type, "application/json");
+    response.set(http::field::cache_control, "no-cache");
     response.body() = json_string;
     response.keep_alive(request.keep_alive());
     response.prepare_payload();
@@ -230,10 +231,9 @@ public:
 
         if (userName.empty())
         {
-            writer(Json(request,
-                dto::ErrorDto {"invalidArgument"s, "Invalid name"s },
+            writer(Json(request, 
+                dto::ErrorDto {"invalidArgument"s, "Invalid name"s }, 
                 http::status::bad_request));
-
             return;
         }
 
@@ -269,7 +269,6 @@ class GetPlayersRequestHandler {
         if (request.method() != http::verb::get && request.method() != http::verb::head){
             auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
             response.set(http::field::allow, "GET, HEAD"s);
-            response.set(http::field::cache_control, "no-cache"s);
             writer(response);
             return;
         }
@@ -278,7 +277,6 @@ class GetPlayersRequestHandler {
 
         if (authorization.empty() || !std::regex_match(authorization, std::regex{"^Bearer .+"s})){
             auto response = Json(request, dto::ErrorDto {"invalidToken"s, "Authorization header is missing"s}, http::status::unauthorized);
-            response.set(http::field::cache_control, "no-cache"s);
             writer(response);
             return;
         }
@@ -289,7 +287,6 @@ class GetPlayersRequestHandler {
 
         if (!player.has_value()){
             auto response = Json(request, dto::ErrorDto{"unknownToken"s, "Player token has not been found"s}, http::status::unauthorized);
-            response.set(http::field::cache_control, "no-cache"s);
             writer(response);
             return;
         }
@@ -303,7 +300,6 @@ class GetPlayersRequestHandler {
         }
 
         auto response = Json(request, jv);
-        response.set(http::field::cache_control, "no-cache"s);
 
         writer(response);
     }

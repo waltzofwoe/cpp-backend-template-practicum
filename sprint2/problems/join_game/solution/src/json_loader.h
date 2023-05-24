@@ -35,4 +35,5 @@ namespace model {
 namespace dto {
     void tag_invoke(json::value_from_tag, json::value& jv, const MapRegistryDto& dto);
     void tag_invoke(json::value_from_tag, json::value& jv, const ErrorDto& dto);
+    void tag_invoke(json::value_from_tag, json::value& jv, const AuthTokenDto& dto);
 }

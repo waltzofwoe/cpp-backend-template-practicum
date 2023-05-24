@@ -1,6 +1,11 @@
 #include "model.h"
 
 #include <stdexcept>
+#include <algorithm>
+#include "token_generator.h"
+
+namespace rs = std::ranges;
+namespace rv = std::ranges::views;
 
 namespace model {
 using namespace std::literals;
@@ -35,4 +40,35 @@ void Game::AddMap(Map map) {
     }
 }
 
+PlayerToken Game::GetPlayerToken(std::string_view playerName){
+    auto existingPlayer = rs::find_if(_players, [&playerName](auto arg){return arg.name == playerName;});
+
+    tokens::token_generator token_generator;
+
+    if (existingPlayer != _players.end()){
+        auto existingToken = rs::find_if(_tokens, [&existingPlayer](auto arg){return arg.playerId == (*existingPlayer).id;});
+
+        if (existingToken != _tokens.end()){
+            return *existingToken;
+        }
+
+        model::PlayerToken token {token_generator.create(), (*existingPlayer).id};
+
+        _tokens.emplace_back(token);
+
+        return token;
+    }
+
+    int playerId = _players.size() + 1;
+
+    model::Player newPlayer {playerId, std::string {playerName}};
+
+    _players.emplace_back(newPlayer);
+
+    model::PlayerToken newToken { token_generator.create(), playerId };
+
+    _tokens.emplace_back(newToken);
+
+    return newToken;
+}
 }  // namespace model

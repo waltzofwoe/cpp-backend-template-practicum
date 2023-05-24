@@ -167,11 +167,31 @@ private:
     Offices offices_;
 };
 
+struct Player {
+    int id;
+    std::string name;
+};
+
+struct PlayerToken {
+    std::string token;
+    int playerId;
+};
+
+struct GameSession {
+    int sessionId;
+    int playerId;
+    Map::Id mapId;
+};
+
 class Game {
 public:
     using Maps = std::vector<Map>;
+    using Players = std::vector<Player>;
+    using Sessions = std::vector<GameSession>;
 
     void AddMap(Map map);
+
+    PlayerToken GetPlayerToken(std::string_view playerName);
 
     const Maps& GetMaps() const noexcept {
         return maps_;
@@ -189,6 +209,8 @@ private:
     using MapIdToIndex = std::unordered_map<Map::Id, size_t, MapIdHasher>;
 
     std::vector<Map> maps_;
+    std::vector<Player> _players;
+    std::vector<PlayerToken> _tokens;
     MapIdToIndex map_id_to_index_;
 };
 

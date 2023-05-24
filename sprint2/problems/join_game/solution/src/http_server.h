@@ -44,8 +44,6 @@ protected:
 
     const HttpRequest& GetRequest() const;
 
-    //void Write(http::message_generator &&response);
-
     template <typename Body, typename Fields>
     void Write(http::response<Body, Fields>&& response) {
         bool keep_alive = response.keep_alive();

@@ -176,8 +176,15 @@ namespace dto {
 
     void tag_invoke(json::value_from_tag, json::value& jv, const ErrorDto& dto){
         jv= {
-            {"code", dto.Code},
-            {"message", dto.Message}
+            {"code"s, dto.Code},
+            {"message"s, dto.Message}
         };
     };
+
+    void tag_invoke(json::value_from_tag, json::value& jv, const AuthTokenDto& dto){
+        jv = {
+            {"authToken"s, dto.AuthToken},
+            {"playerId"s, dto.PlayerId}
+        };
+    }
 } //namespace dto

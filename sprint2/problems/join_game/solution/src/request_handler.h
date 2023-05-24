@@ -165,6 +165,82 @@ private:
     fs::path wwwroot_;
 };
 
+class JoinRequestHandler{
+    model::Game& _game;
+
+public:
+    explicit JoinRequestHandler(model::Game& game) : _game { game }{};
+
+    template <typename Body, typename Allocator, typename ResponseWriter>
+    void operator()(http::request<Body, http::basic_fields<Allocator>>&& request, ResponseWriter&& writer) {
+        if (request.method() != http::verb::post){
+            writer(Json(request, dto::ErrorDto {"invalidMethod"s, "Only POST method is expected"s}, http::status::method_not_allowed));
+            return;
+        }
+
+        if (request[http::field::content_type] != "application/json"){
+            writer(Json(request,
+                dto::ErrorDto {"invalidContentType"s, "Expected application/json"s},
+                http::status::bad_request));
+
+            return;
+        }
+
+        sys::error_code ec;
+
+        json::value body_value = json::parse(request.body(), ec);
+
+        if (ec || !body_value.is_object())
+        {
+            writer(Json(request,
+                dto::ErrorDto {"invalidArgument"s, ec.message()},
+                http::status::bad_request));
+            
+            return;
+        }
+
+        auto body = body_value.as_object();
+
+        if (!body.if_contains("mapId"s) || !body.if_contains("userName"s))
+        {
+            writer(Json(request,
+                dto::ErrorDto {"invalidArgument"s, "Join game request parse error"s},
+                http::status::bad_request));
+            
+            return;
+        }
+
+        std::string userName = json::value_to<std::string>(body["userName"s]);
+
+        if (userName.empty())
+        {
+            writer(Json(request,
+                dto::ErrorDto {"invalidArgument"s, "Invalid name"s },
+                http::status::bad_request));
+
+            return;
+        }
+
+        auto mapId = json::value_to<std::string>(body["mapId"s]);
+
+        auto map = _game.FindMap(model::Map::Id {mapId});
+
+        if (!map)
+        {
+            writer(Json(request,
+                dto::ErrorDto {"mapNotFound"s, "Map not found"s},
+                http::status::not_found));
+
+            return;
+        }
+
+        auto token = _game.GetPlayerToken(userName);
+
+        writer(Json(request, dto::AuthTokenDto {token.token, token.playerId}));
+
+        return;
+    }
+};
 
 class RequestHandler {
 public:
@@ -217,6 +293,12 @@ public:
             }
 
             writer(std::move(Json(request, map)));
+            return;
+        }
+
+        if (request.target() == "/api/v1/game/join"s){
+            JoinRequestHandler join_handler {game_};
+            join_handler(std::move(request), writer);
             return;
         }
 

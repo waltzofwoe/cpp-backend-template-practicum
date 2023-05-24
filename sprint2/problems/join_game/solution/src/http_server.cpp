@@ -58,15 +58,6 @@ namespace http_server {
         return request_;
     }
 
-    // void SessionBase::Write(http::message_generator&& response)
-    // {
-    //     bool keep_alive = response.keep_alive();
-
-    //     beast::async_write(stream_, 
-    //         std::move(response),
-    //         beast::bind_front_handler(&SessionBase::OnWrite, GetSharedThis(), keep_alive));
-    // }
-
     void SessionBase::OnWrite(bool keep_alive, beast::error_code ec, [[maybe_unused]] std::size_t bytes_written)
     {
         if (ec)

@@ -21,4 +21,11 @@ struct ErrorDto {
     std::string Code;
     std::string Message;
 }; //struct ErrorDto
+
+/// @brief DTO для токена авторизации
+struct AuthTokenDto {
+    std::string AuthToken;
+    int PlayerId;
+}; //struct AuthTokenDto
+
 } // namespace dto

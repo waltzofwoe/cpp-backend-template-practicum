@@ -27,6 +27,7 @@ add_executable(game_server
 	src/file_utils.cpp
 	src/logger.h
 	src/logger.cpp
+	src/token_generator.h
 )
 target_link_libraries(game_server PRIVATE Threads::Threads)
 target_link_libraries(game_server PRIVATE CONAN_PKG::boost)

@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <ranges>
 #include "token_generator.h"
 
 namespace rs = std::ranges;

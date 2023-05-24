@@ -8,6 +8,7 @@
 #include "dto.h"
 #include "file_utils.h"
 #include "logger.h"
+#include <regex>
 
 #define BOOST_URL_NO_LIB
 #include <boost/url.hpp>
@@ -71,6 +72,21 @@ StringResponse Json(
 
     auto json_string = json::serialize(jv);
 
+    StringResponse response {status_code, request.version()};
+    response.set(http::field::content_type, "application/json");
+    response.body() = json_string;
+    response.keep_alive(request.keep_alive());
+    response.prepare_payload();
+    return response;
+}
+
+template <typename Body, typename Allocator>
+StringResponse Json(
+    const http::request<Body, http::basic_fields<Allocator>>& request, 
+    json::value jvalue,
+    http::status status_code = http::status::ok)
+{
+    auto json_string = json::serialize(jvalue);
     StringResponse response {status_code, request.version()};
     response.set(http::field::content_type, "application/json");
     response.body() = json_string;
@@ -234,11 +250,62 @@ public:
             return;
         }
 
-        auto token = _game.GetPlayerToken(userName);
+        auto player = _game.GetOrCreatePlayer(userName);
 
-        writer(Json(request, dto::AuthTokenDto {token.token, token.playerId}));
+        writer(Json(request, dto::AuthTokenDto {player.token, player.id}));
 
         return;
+    }
+};
+
+class GetPlayersRequestHandler {
+    model::Game& _game;
+
+    public:
+    explicit GetPlayersRequestHandler(model::Game& game) : _game {game} {};
+
+    template <typename Body, typename Allocator, typename ResponseWriter>
+    void operator()(http::request<Body, http::basic_fields<Allocator>>&& request, ResponseWriter&& writer) {
+        if (request.method() != http::verb::get && request.method() != http::verb::head){
+            auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
+            response.set(http::field::allow, "GET, HEAD"s);
+            response.set(http::field::cache_control, "no-cache"s);
+            writer(response);
+            return;
+        }
+
+        std::string authorization = request[http::field::authorization];
+
+        if (authorization.empty() || !std::regex_match(authorization, std::regex{"^Bearer .+"s})){
+            auto response = Json(request, dto::ErrorDto {"invalidToken"s, "Authorization header is missing"s}, http::status::unauthorized);
+            response.set(http::field::cache_control, "no-cache"s);
+            writer(response);
+            return;
+        }
+
+        auto token = authorization.substr(7);
+
+        auto player = _game.FindPlayerByToken(token);
+
+        if (!player.has_value()){
+            auto response = Json(request, dto::ErrorDto{"unknownToken"s, "Player token has not been found"s}, http::status::unauthorized);
+            response.set(http::field::cache_control, "no-cache"s);
+            writer(response);
+            return;
+        }
+
+        auto players = _game.GetPlayers();
+
+        json::object jv;
+
+        for(const auto &player : players){
+            jv[std::to_string(player.id)] = { {"name"s, player.name} };
+        }
+
+        auto response = Json(request, jv);
+        response.set(http::field::cache_control, "no-cache"s);
+
+        writer(response);
     }
 };
 
@@ -299,6 +366,12 @@ public:
         if (request.target() == "/api/v1/game/join"s){
             JoinRequestHandler join_handler {game_};
             join_handler(std::move(request), writer);
+            return;
+        }
+
+        if (request.target() == "/api/v1/game/players"s){
+            GetPlayersRequestHandler get_players_handler{game_};
+            get_players_handler(std::move(request), writer);
             return;
         }
 

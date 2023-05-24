@@ -40,35 +40,32 @@ void Game::AddMap(Map map) {
     }
 }
 
-PlayerToken Game::GetPlayerToken(std::string_view playerName){
+Player Game::GetOrCreatePlayer(std::string_view playerName){
     auto existingPlayer = rs::find_if(_players, [&playerName](auto arg){return arg.name == playerName;});
+
+    if (existingPlayer != _players.end()){
+        return *existingPlayer;
+    }
 
     tokens::token_generator token_generator;
 
-    if (existingPlayer != _players.end()){
-        auto existingToken = rs::find_if(_tokens, [&existingPlayer](auto arg){return arg.playerId == (*existingPlayer).id;});
-
-        if (existingToken != _tokens.end()){
-            return *existingToken;
-        }
-
-        model::PlayerToken token {token_generator.create(), (*existingPlayer).id};
-
-        _tokens.emplace_back(token);
-
-        return token;
-    }
-
     int playerId = _players.size() + 1;
 
-    model::Player newPlayer {playerId, std::string {playerName}};
+    model::Player newPlayer {playerId, std::string {playerName}, token_generator.create()};
 
     _players.emplace_back(newPlayer);
 
-    model::PlayerToken newToken { token_generator.create(), playerId };
+    return newPlayer;
+}
 
-    _tokens.emplace_back(newToken);
+std::optional<Player> Game::FindPlayerByToken(std::string_view token){
+    auto player = rs::find_if(_players, [&token](auto arg) {return arg.token == token;});
 
-    return newToken;
+    if (player == _players.end())
+    {
+        return std::nullopt;
+    }
+
+    return *player;
 }
 }  // namespace model

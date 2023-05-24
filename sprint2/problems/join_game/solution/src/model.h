@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 #include "tagged.h"
 
@@ -170,11 +171,7 @@ private:
 struct Player {
     int id;
     std::string name;
-};
-
-struct PlayerToken {
     std::string token;
-    int playerId;
 };
 
 struct GameSession {
@@ -190,8 +187,12 @@ public:
     using Sessions = std::vector<GameSession>;
 
     void AddMap(Map map);
+    Player GetOrCreatePlayer(std::string_view playerName);
+    std::optional<Player> FindPlayerByToken(std::string_view token);
 
-    PlayerToken GetPlayerToken(std::string_view playerName);
+    const std::vector<Player>& GetPlayers(){
+        return _players;
+    }
 
     const Maps& GetMaps() const noexcept {
         return maps_;
@@ -210,7 +211,6 @@ private:
 
     std::vector<Map> maps_;
     std::vector<Player> _players;
-    std::vector<PlayerToken> _tokens;
     MapIdToIndex map_id_to_index_;
 };
 

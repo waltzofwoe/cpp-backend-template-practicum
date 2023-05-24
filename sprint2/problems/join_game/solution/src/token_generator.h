@@ -1,6 +1,7 @@
 #pragma once
 #include <random>
 #include <sstream>
+#include <iomanip>
 
 namespace tokens {
     class token_generator
@@ -29,7 +30,7 @@ namespace tokens {
 
         std::ostringstream str;
 
-        str << std::hex << value1 << value2;
+        str << std::setfill ('0') << std::setw(sizeof(uint))<< std::hex << value1 << value2;
 
         return str.str();
     }

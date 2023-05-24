@@ -191,7 +191,9 @@ public:
     template <typename Body, typename Allocator, typename ResponseWriter>
     void operator()(http::request<Body, http::basic_fields<Allocator>>&& request, ResponseWriter&& writer) {
         if (request.method() != http::verb::post){
-            writer(Json(request, dto::ErrorDto {"invalidMethod"s, "Only POST method is expected"s}, http::status::method_not_allowed));
+            auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Only POST method is expected"s}, http::status::method_not_allowed);
+            response.set(http::field::allow, "POST");
+            writer(response);
             return;
         }
 

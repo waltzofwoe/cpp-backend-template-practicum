@@ -4,12 +4,24 @@
 #include <boost/json.hpp>
 #include <ranges>
 
+namespace http_handler {
+
 namespace rs = std::ranges;
 namespace rv = std::ranges::views;
 namespace sys = boost::system;
 
-namespace http_handler {
-    JsonResponse HandleGetMaps(const app::Application& application, StringRequest request){
+    std::optional<std::string> GetAuthToken(StringRequest& request){
+        std::string authorization = request[http::field::authorization];
+
+        if (authorization.empty() || !std::regex_match(authorization, std::regex{"^Bearer .+"s})){
+            return std::nullopt;
+        }
+
+        return authorization.substr(7);
+    }
+
+
+    JsonResponse HandleGetMaps(const app::Application& application, StringRequest&& request){
         // получить список карт
         auto maps = application.GetMaps();
 
@@ -21,7 +33,7 @@ namespace http_handler {
         return Json(request, mapsDto);
     }
 
-    JsonResponse HandleGetMapByName(app::Application& application, StringRequest request, const std::string& mapName){
+    JsonResponse HandleGetMapByName(app::Application& application, StringRequest&& request, const std::string& mapName){
 
         auto map = application.FindMap(mapName);
 
@@ -32,7 +44,7 @@ namespace http_handler {
         return Json(request, map);
     }
 
-    JsonResponse HandleJoinGame(app::Application& application, StringRequest request){
+    JsonResponse HandleJoinGame(app::Application& application, StringRequest&& request){
         if (request.method() != http::verb::post){
             auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Only POST method is expected"s}, http::status::method_not_allowed);
             response.set(http::field::allow, "POST");
@@ -90,22 +102,20 @@ namespace http_handler {
         return Json(request, dto::AuthTokenDto {player.token, player.id});
     }
 
-    JsonResponse HandleGetPlayers(app::Application& application, StringRequest request){
+    JsonResponse HandleGetPlayers(app::Application& application, StringRequest&& request){
         if (request.method() != http::verb::get && request.method() != http::verb::head){
             auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
             response.set(http::field::allow, "GET, HEAD"s);
             return response;
         }
 
-        std::string authorization = request[http::field::authorization];
-
-        if (authorization.empty() || !std::regex_match(authorization, std::regex{"^Bearer .+"s})){
+        auto token = GetAuthToken(request);
+        
+        if (!token.has_value()){
             return Json(request, dto::ErrorDto {"invalidToken"s, "Authorization header is missing"s}, http::status::unauthorized);
         }
 
-        auto token = authorization.substr(7);
-
-        auto player = application.FindPlayerByToken(token);
+        auto player = application.FindPlayerByToken(*token);
 
         if (!player.has_value()){
             return Json(request, dto::ErrorDto{"unknownToken"s, "Player token has not been found"s}, http::status::unauthorized);
@@ -122,7 +132,65 @@ namespace http_handler {
         return Json(request, jv);
     }
 
-    JsonResponse HandleBadRequest(StringRequest request){
+    JsonResponse HandleGetGameState(app::Application& application, StringRequest&& request){
+        if (request.method() != http::verb::get){
+            return Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s});
+        }
+
+        auto token = GetAuthToken(request);
+        
+        if (!token.has_value()){
+            return Json(request, dto::ErrorDto {"invalidToken"s, "Authorization header is required"s}, http::status::unauthorized);
+        }
+
+        auto player = application.FindPlayerByToken(*token);
+
+        if (!player.has_value()){
+            return Json(request, dto::ErrorDto{"unknownToken"s, "Player token has not been found"s}, http::status::unauthorized);
+        }
+
+        auto session = application.GetSession(player.value().sessionId);
+
+        if (session.has_value()){
+            return Json(request, dto::ErrorDto { "sessionNotFound"s, "Session not found"s}, http::status::internal_server_error);
+        }
+
+        json::object obj;
+
+        for (const auto dog : session.value().GetDogs()){
+
+            char direction;
+
+            switch (dog.direction)
+            {
+            case model::NORTH:
+                direction = 'N';
+                break;
+
+            case model::SOUTH:
+                direction = 'S';
+                break;
+
+            case model::EAST:
+                direction = 'E';
+                break;
+
+            case model::WEST:
+                direction = 'W';
+                break;
+            }
+
+            obj[std::to_string(dog.playerId)] = {
+                {"pos"s, {dog.x, dog.y}},
+                {"speed"s, {dog.speedX, dog.speedY}},
+                {"dir"s, direction}
+            };
+
+        }
+        return Json(request, json::object {{"players"s, obj}});
+    }
+
+    JsonResponse HandleBadRequest(StringRequest&& request){
         return Json(request, dto::ErrorDto {"badRequest"s, "Bad request"s}, http::status::bad_request);
     }
 }

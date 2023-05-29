@@ -3,8 +3,12 @@
 #include <unordered_map>
 #include <vector>
 #include <optional>
+#include <ranges>
+#include <algorithm>
 
 #include "tagged.h"
+
+namespace rs = std::ranges;
 
 namespace model {
 
@@ -168,13 +172,25 @@ private:
     Offices offices_;
 };
 
-class Dog {
-    std::string _name;
-    int _id;
-    int _playerId;
+enum Direction {
+    NORTH,
+    SOUTH,
+    WEST,
+    EAST
+};
+
+struct Dog {
+    std::string name;
+    int id;
+    int playerId;
+    double x;
+    double y;
+    double speedX;
+    double speedY;
+    Direction direction;
 
     public:
-    Dog(int id, int playerId) : _id { id }, _playerId { playerId } {};
+    Dog(int id, int playerId) : id { id }, playerId { playerId } {};
 };
 
 class GameSession {
@@ -198,6 +214,10 @@ class GameSession {
 
         _dogs.emplace_back(Dog {dogId, playerId});
     }
+
+    const std::vector<Dog>& GetDogs(){
+        return _dogs;
+    }
 };
 
 class Game {
@@ -216,6 +236,13 @@ public:
         }
         return nullptr;
     }
+
+    std::optional<GameSession> GetSession(int sessionId){
+        auto result = rs::find_if(_sessions, [sessionId](auto arg){return arg.GetId() == sessionId;});
+
+        return result == _sessions.end() ? std::nullopt : std::optional(*result);
+    }
+
 
     std::optional<GameSession> FindSessionByMapId(const Map::Id& mapId);
     GameSession& CreateSession(const Map::Id& mapId);

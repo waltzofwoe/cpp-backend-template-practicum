@@ -35,7 +35,8 @@ namespace app {
             return _game.FindMap(mapId);
         }
 
-
-        
+        std::optional<model::GameSession> GetSession(int sessionId){
+            return _game.GetSession(sessionId);
+        }
     };
 }

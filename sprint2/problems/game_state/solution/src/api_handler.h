@@ -49,15 +49,17 @@ namespace http_handler {
         return response;
     }
 
-    JsonResponse HandleGetMaps(const app::Application& application, StringRequest request);
+    JsonResponse HandleGetMaps(const app::Application& application, StringRequest&& request);
 
-    JsonResponse HandleGetMapByName(app::Application& application, StringRequest request, const std::string& mapName);
+    JsonResponse HandleGetMapByName(app::Application& application, StringRequest&& request, const std::string& mapName);
 
-    JsonResponse HandleJoinGame(app::Application& application, StringRequest request);
+    JsonResponse HandleJoinGame(app::Application& application, StringRequest&& request);
 
-    JsonResponse HandleGetPlayers(app::Application& application, StringRequest request);
+    JsonResponse HandleGetPlayers(app::Application& application, StringRequest&& request);
 
-    JsonResponse HandleBadRequest(StringRequest request);
+    JsonResponse HandleBadRequest(StringRequest&& request);
+
+    JsonResponse HandleGetGameState(app::Application& application, StringRequest&& request);
 
     class ApiHandler {
         app::Application _application;
@@ -107,6 +109,14 @@ namespace http_handler {
 
             if (request.target() == "/api/v1/game/players"s){
                 auto response = HandleGetPlayers(_application, std::move(request));
+
+                writer(response);
+
+                return;
+            }
+
+            if (request.target() == "/api/v1/game/state"s){
+                auto response = HandleGetGameState(_application, std::move(request));
 
                 writer(response);
 

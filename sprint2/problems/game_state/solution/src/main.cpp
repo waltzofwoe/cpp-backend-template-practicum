@@ -9,6 +9,7 @@
 #include "json_loader.h"
 #include "request_handler.h"
 #include "logger.h"
+#include "application.h"
 #include <boost/log/utility/manipulators/add_value.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -42,7 +43,7 @@ int main(int argc, const char* argv[]) {
     }
     try {
         // 1. Загружаем карту из файла и построить модель игры
-        model::Game game = json_loader::LoadGame(argv[1]);
+        app::Application application { json_loader::LoadGame(argv[1]) };
 
         // 2. Инициализируем io_context
         const unsigned num_threads = std::thread::hardware_concurrency();
@@ -59,7 +60,7 @@ int main(int argc, const char* argv[]) {
         });
 
         // 4. Создаём обработчик HTTP-запросов и связываем его с моделью игры
-        http_handler::RequestHandler handler{game, http_handler::StaticFileRequestHandler(argv[2])};
+        http_handler::RequestHandler handler{http_handler::ApiHandler {std::move(application)}, http_handler::StaticFileRequestHandler(argv[2])};
 
         // 5. Запустить обработчик HTTP-запросов, делегируя их обработчику запросов
         const auto address = net::ip::make_address("0.0.0.0");
@@ -67,9 +68,6 @@ int main(int argc, const char* argv[]) {
 
         http_server::ServeHttp(ioc, {address, port}, std::forward<http_handler::RequestHandler>(handler));
         
-        // // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
-        // std::cout << "Server has started..."sv << std::endl;
-
         // инициализация логгера
         logger::InitBoostLogs();
 

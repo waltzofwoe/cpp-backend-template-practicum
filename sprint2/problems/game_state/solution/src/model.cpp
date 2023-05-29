@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include <algorithm>
 #include <ranges>
-#include "token_generator.h"
 
 namespace rs = std::ranges;
 namespace rv = std::ranges::views;
@@ -41,32 +40,20 @@ void Game::AddMap(Map map) {
     }
 }
 
-Player Game::GetOrCreatePlayer(std::string_view playerName){
-    auto existingPlayer = rs::find_if(_players, [&playerName](auto arg){return arg.name == playerName;});
+std::optional<GameSession> Game::FindSessionByMapId(const Map::Id& mapId){
+    auto session = rs::find_if(_sessions, [mapId](auto arg){return arg.GetMapId() == mapId;});
 
-    if (existingPlayer != _players.end()){
-        return *existingPlayer;
+    if (session != _sessions.end()){
+        return *session;
     }
 
-    tokens::token_generator token_generator;
-
-    int playerId = _players.size() + 1;
-
-    model::Player newPlayer {playerId, std::string {playerName}, token_generator.create()};
-
-    _players.emplace_back(newPlayer);
-
-    return newPlayer;
+    return std::nullopt;
 }
 
-std::optional<Player> Game::FindPlayerByToken(std::string_view token){
-    auto player = rs::find_if(_players, [&token](auto arg) {return arg.token == token;});
+GameSession& Game::CreateSession(const Map::Id& mapId){
+    int sessionId = _sessions.size() + 1;
 
-    if (player == _players.end())
-    {
-        return std::nullopt;
-    }
-
-    return *player;
+    return _sessions.emplace_back(GameSession{sessionId, mapId});
 }
+
 }  // namespace model

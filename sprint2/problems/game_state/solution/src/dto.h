@@ -11,7 +11,7 @@ struct MapRegistryDto {
 
     MapRegistryDto() {};    
 
-    MapRegistryDto(model::Map&& map) :
+    MapRegistryDto(const model::Map& map) :
         Id(*map.GetId()),
         Name(map.GetName()){}
 }; // struct MapRegistryDto

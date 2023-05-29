@@ -168,31 +168,43 @@ private:
     Offices offices_;
 };
 
-struct Player {
-    int id;
-    std::string name;
-    std::string token;
+class Dog {
+    std::string _name;
+    int _id;
+    int _playerId;
+
+    public:
+    Dog(int id, int playerId) : _id { id }, _playerId { playerId } {};
 };
 
-struct GameSession {
-    int sessionId;
-    int playerId;
-    Map::Id mapId;
+class GameSession {
+    int _id;
+    Map::Id _mapId;
+    std::vector<Dog> _dogs;
+
+    public:
+    explicit GameSession(int id, const Map::Id& mapId) : _id {id}, _mapId {mapId} {};
+
+    const Map::Id& GetMapId() {
+        return _mapId;
+    }
+
+    int GetId() {
+        return _id;
+    }
+
+    void AddDog(int playerId) {
+        int dogId = _dogs.size() + 1;
+
+        _dogs.emplace_back(Dog {dogId, playerId});
+    }
 };
 
 class Game {
 public:
     using Maps = std::vector<Map>;
-    using Players = std::vector<Player>;
-    using Sessions = std::vector<GameSession>;
 
     void AddMap(Map map);
-    Player GetOrCreatePlayer(std::string_view playerName);
-    std::optional<Player> FindPlayerByToken(std::string_view token);
-
-    const std::vector<Player>& GetPlayers(){
-        return _players;
-    }
 
     const Maps& GetMaps() const noexcept {
         return maps_;
@@ -205,13 +217,17 @@ public:
         return nullptr;
     }
 
+    std::optional<GameSession> FindSessionByMapId(const Map::Id& mapId);
+    GameSession& CreateSession(const Map::Id& mapId);
+
 private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;
     using MapIdToIndex = std::unordered_map<Map::Id, size_t, MapIdHasher>;
 
     std::vector<Map> maps_;
-    std::vector<Player> _players;
     MapIdToIndex map_id_to_index_;
+
+    std::vector<GameSession> _sessions;
 };
 
 }  // namespace model

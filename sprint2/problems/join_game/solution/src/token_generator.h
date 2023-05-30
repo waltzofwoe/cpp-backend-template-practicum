@@ -32,6 +32,8 @@ namespace tokens {
 
         str << std::hex << std::setfill('0') << std::setw(sizeof(uint_fast64_t)) << value1 << value2;
 
+        str.flush();
+
         return str.str();
     }
 }

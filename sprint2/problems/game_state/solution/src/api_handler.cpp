@@ -133,10 +133,10 @@ namespace sys = boost::system;
     }
 
     JsonResponse HandleGetGameState(app::Application& application, StringRequest&& request){
-        if (request.method() != http::verb::get){
+        if (request.method() != http::verb::get && request.method() != http::verb::head){
             auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
 
-            response.set(http::field::allow, "GET");
+            response.set(http::field::allow, "GET, HEAD");
 
             return response;
         }
@@ -155,7 +155,7 @@ namespace sys = boost::system;
 
         auto session = application.GetSession(player.value().sessionId);
 
-        if (session.has_value()){
+        if (!session.has_value()){
             return Json(request, dto::ErrorDto { "sessionNotFound"s, "Session not found"s}, http::status::internal_server_error);
         }
 
@@ -163,24 +163,24 @@ namespace sys = boost::system;
 
         for (const auto dog : session.value().GetDogs()){
 
-            char direction;
+            std::string direction;
 
             switch (dog.direction)
             {
             case model::NORTH:
-                direction = 'N';
+                direction = "N"s;
                 break;
 
             case model::SOUTH:
-                direction = 'S';
+                direction = "S"s;
                 break;
 
             case model::EAST:
-                direction = 'E';
+                direction = "E"s;
                 break;
 
             case model::WEST:
-                direction = 'W';
+                direction = "W"s;
                 break;
             }
 

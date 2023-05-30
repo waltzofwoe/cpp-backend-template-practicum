@@ -190,7 +190,7 @@ struct Dog {
     Direction direction;
 
     public:
-    Dog(int id, int playerId) : id { id }, playerId { playerId } {};
+    Dog(int id, int playerId) : id { id }, playerId { playerId }, direction{NORTH}, speedX{}, speedY{} {};
 };
 
 class GameSession {
@@ -242,7 +242,6 @@ public:
 
         return result == _sessions.end() ? std::nullopt : std::optional(*result);
     }
-
 
     std::optional<GameSession> FindSessionByMapId(const Map::Id& mapId);
     GameSession& CreateSession(const Map::Id& mapId);

@@ -14,10 +14,10 @@ namespace app {
 
     class Application {
         std::vector<Player> _players;
-        model::Game _game;
+        model::Game& _game;
 
         public:
-        Application(model::Game&& game) : _game { game } {};
+        explicit Application(model::Game& game) : _game { game } {};
 
         Player JoinGame(const std::string& playerName, const std::string& mapId);
 

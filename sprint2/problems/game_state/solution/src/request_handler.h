@@ -156,15 +156,16 @@ public:
     using StatusCodeResponse = http::response<http::empty_body>;
     using FileResponse = http::response<http::file_body>;
 
-    explicit RequestHandler(ApiHandler&& apiHandler, StaticFileRequestHandler&& staticHandler)
-        : _apiHandler{std::move(apiHandler)}, _staticFileHandler(std::move(staticHandler)) {}
+    explicit RequestHandler(ApiHandler&& apiHandler, StaticFileRequestHandler&& staticHandler) :
+        _apiHandler{std::forward<ApiHandler>(apiHandler)}, 
+        _staticFileHandler(std::forward<StaticFileRequestHandler>(staticHandler)) {}
 
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
 
     RequestHandler(RequestHandler&& other) : 
-        _apiHandler(std::move(other._apiHandler)),
-        _staticFileHandler(std::move(other._staticFileHandler)) {}
+        _apiHandler(std::forward<ApiHandler>(other._apiHandler)),
+        _staticFileHandler(std::forward<StaticFileRequestHandler>(other._staticFileHandler)) {}
 
     template <typename Body, typename Allocator, typename ResponseWriter>
     void operator()(http::request<Body, http::basic_fields<Allocator>>&& request, ResponseWriter&& writer) {

@@ -28,7 +28,7 @@ Player Application::JoinGame(const std::string& playerName, const std::string& m
 
     // сессии нет - создаем
 
-    model::GameSession session { 1, model::Map::Id{mapId}};
+    auto& session = _game.CreateSession(model::Map::Id{mapId});
 
     Player player {_players.size() +1, playerName, session.GetId(), generator.create()};
 

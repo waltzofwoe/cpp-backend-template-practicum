@@ -62,14 +62,15 @@ namespace http_handler {
     JsonResponse HandleGetGameState(app::Application& application, StringRequest&& request);
 
     class ApiHandler {
-        app::Application _application;
+        app::Application& _application;
 
         public:
         ApiHandler(const ApiHandler&) = delete;
         ApiHandler& operator=(const ApiHandler&) = delete;
 
         ApiHandler(ApiHandler&& other) : _application (other._application) {};
-        explicit ApiHandler(app::Application&& app) : _application {app} {};
+
+        explicit ApiHandler(app::Application& app) : _application {app} {};
         
         bool IsApiRequest(std::string path) {
             return path.starts_with("/api/"s);

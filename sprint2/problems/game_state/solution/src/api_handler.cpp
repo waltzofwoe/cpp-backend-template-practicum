@@ -168,19 +168,19 @@ namespace sys = boost::system;
             switch (dog.direction)
             {
             case model::NORTH:
-                direction = "N"s;
+                direction = "U"s;
                 break;
 
             case model::SOUTH:
-                direction = "S"s;
+                direction = "D"s;
                 break;
 
             case model::EAST:
-                direction = "E"s;
+                direction = "R"s;
                 break;
 
             case model::WEST:
-                direction = "W"s;
+                direction = "L"s;
                 break;
             }
 

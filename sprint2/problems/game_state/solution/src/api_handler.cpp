@@ -134,7 +134,11 @@ namespace sys = boost::system;
 
     JsonResponse HandleGetGameState(app::Application& application, StringRequest&& request){
         if (request.method() != http::verb::get){
-            return Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
+            auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
+
+            response.set(http::field::allow, "GET");
+
+            return response;
         }
 
         auto token = GetAuthToken(request);

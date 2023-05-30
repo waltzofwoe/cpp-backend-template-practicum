@@ -31,7 +31,7 @@ namespace tokens {
 
         std::ostringstream str;
 
-        str << boost::format("%16x%16x") % value1 % value2;
+        str << boost::format("%016x%016x") % value1 % value2;
 
         return str.str();
     }

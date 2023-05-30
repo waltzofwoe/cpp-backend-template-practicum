@@ -2,7 +2,7 @@
 #include <random>
 #include <sstream>
 #include <iomanip>
-#include <format>
+#include <boost/format.hpp>
 
 namespace tokens {
     class token_generator
@@ -29,6 +29,10 @@ namespace tokens {
         auto value1 = _generator1();
         auto value2 = _generator2();
 
-        return std::format("{:16x}{:16x}", value1, value2);
+        std::ostringstream str;
+
+        str << boost::format("%16x%16x") % value1 % value2;
+
+        return str.str();
     }
 }

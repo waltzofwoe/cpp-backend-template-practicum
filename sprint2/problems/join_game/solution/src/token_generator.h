@@ -2,6 +2,7 @@
 #include <random>
 #include <sstream>
 #include <iomanip>
+#include <format>
 
 namespace tokens {
     class token_generator
@@ -28,10 +29,6 @@ namespace tokens {
         auto value1 = _generator1();
         auto value2 = _generator2();
 
-        std::ostringstream str;
-
-        str << std::hex << std::setfill('0') << std::setw(sizeof(uint_fast64_t)*2) << value1 << value2;
-
-        return str.str();
+        return std::format("{:16x}{:16x}", value1, value2);
     }
 }

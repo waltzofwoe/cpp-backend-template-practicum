@@ -13,7 +13,7 @@ namespace sys = boost::system;
     std::optional<std::string> GetAuthToken(StringRequest& request){
         std::string authorization = request[http::field::authorization];
 
-        if (authorization.empty() || !std::regex_match(authorization, std::regex{"^Bearer .+"s})){
+        if (authorization.empty() || !std::regex_match(authorization, std::regex{"^Bearer \\w{32}"s})){
             return std::nullopt;
         }
 
@@ -134,7 +134,7 @@ namespace sys = boost::system;
 
     JsonResponse HandleGetGameState(app::Application& application, StringRequest&& request){
         if (request.method() != http::verb::get){
-            return Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s});
+            return Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
         }
 
         auto token = GetAuthToken(request);

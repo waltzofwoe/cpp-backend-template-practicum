@@ -30,9 +30,7 @@ namespace tokens {
 
         std::ostringstream str;
 
-        str << std::hex << std::setfill('0') << std::setw(sizeof(uint_fast64_t)) << value1 << value2;
-
-        str.flush();
+        str << std::hex << std::setfill('0') << std::setw(sizeof(uint_fast64_t)*2) << value1 << value2;
 
         return str.str();
     }

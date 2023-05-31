@@ -239,7 +239,7 @@ namespace sys = boost::system;
 
         application.Move(*player, move);
 
-        return Json(request, {});
+        return Json(request, json::object{});
     }
 
     JsonResponse HandleBadRequest(StringRequest&& request){

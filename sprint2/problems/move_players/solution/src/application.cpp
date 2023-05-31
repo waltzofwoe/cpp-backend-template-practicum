@@ -7,17 +7,19 @@ namespace rs = std::ranges;
 
 namespace app {
 
+using namespace std::literals;
+
 Player Application::JoinGame(const std::string& playerName, const std::string& mapId) {
     tokens::token_generator generator;
 
-    if (auto session = _game.FindSessionByMapId(model::Map::Id{mapId}); session.has_value()){
-        auto findResult = rs::find_if(_players, [playerName, &session](auto arg){return arg.name == playerName && arg.sessionId == session.value().GetId();}); 
+    if (auto session = _game.FindSessionByMapId(model::Map::Id{mapId})){
+        auto findResult = rs::find_if(_players, [playerName, &session](auto arg){return arg.name == playerName && arg.sessionId == session->GetId();}); 
         
         // если игрока нет в сессии
         if (findResult == _players.end()) {
-            Player player {_players.size() +1, playerName, session.value().GetId(), generator.create()};
+            Player player {_players.size() +1, playerName, session->GetId(), generator.create()};
 
-            session.value().AddDog(player.id);
+            session->AddDog(player.id);
 
             return _players.emplace_back(player);
         }
@@ -54,4 +56,60 @@ std::optional<Player> Application::FindPlayerByToken(const std::string& token){
     return *player;
 }
 
+void Application::Move(const Player& player, std::string move){
+    auto session = _game.GetSession(player.sessionId);
+
+    if (!session)
+        return;
+
+    auto dog = session->GetDogByPlayerId(player.id);
+
+    if (!dog)
+        return;
+
+    auto map = _game.FindMap(session->GetMapId());
+
+    if (!map)
+        return;
+
+    auto speed = map->GetDogSpeed().has_value() 
+        ? map->GetDogSpeed().value() 
+        : _game.GetDefaultDogSpeed();
+
+    if (move.empty())
+    {
+        dog->speedX = 0;
+        dog->speedY = 0;
+
+        return;
+    }
+
+    if (move == "L"s){
+        dog->speedX = -1 * speed;
+        dog->speedY = 0;
+
+        return;
+    }
+
+    if (move == "R"s){
+        dog->speedX = speed;
+        dog->speedY = 0;
+
+        return;
+    }
+
+    if (move == "U"s){
+        dog->speedX = 0;
+        dog->speedY = -1 * speed;
+
+        return;
+    }
+
+    if (move == "D"s) {
+        dog->speedX = 0;
+        dog->speedY = speed;
+
+        return;
+    }
+}
 }

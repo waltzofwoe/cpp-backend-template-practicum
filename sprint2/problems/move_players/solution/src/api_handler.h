@@ -61,6 +61,8 @@ namespace http_handler {
 
     JsonResponse HandleGetGameState(app::Application& application, StringRequest&& request);
 
+    JsonResponse HandlePostPlayerAction(app::Application& application, StringRequest&& request);
+
     class ApiHandler {
         app::Application& _application;
 
@@ -118,6 +120,14 @@ namespace http_handler {
 
             if (request.target() == "/api/v1/game/state"s){
                 auto response = HandleGetGameState(_application, std::move(request));
+
+                writer(response);
+
+                return;
+            }
+
+            if(request.target() == "/api/v1/game/player/action"s) {
+                auto response = HandlePostPlayerAction(_application, std::move(request));
 
                 writer(response);
 

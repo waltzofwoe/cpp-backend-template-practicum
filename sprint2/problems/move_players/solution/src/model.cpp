@@ -40,14 +40,10 @@ void Game::AddMap(Map map) {
     }
 }
 
-std::optional<GameSession> Game::FindSessionByMapId(const Map::Id& mapId){
+GameSession* Game::FindSessionByMapId(const Map::Id& mapId){
     auto session = rs::find_if(_sessions, [mapId](auto arg){return arg.GetMapId() == mapId;});
 
-    if (session != _sessions.end()){
-        return *session;
-    }
-
-    return std::nullopt;
+    return session == _sessions.end() ? nullptr : &(*session);
 }
 
 GameSession& Game::CreateSession(const Map::Id& mapId){

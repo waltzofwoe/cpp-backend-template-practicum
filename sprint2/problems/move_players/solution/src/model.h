@@ -150,6 +150,10 @@ public:
         return offices_;
     }
 
+    std::optional<double> GetDogSpeed() const noexcept {
+        return _dogSpeed;
+    }
+
     void AddRoad(const Road& road) {
         roads_.emplace_back(road);
     }
@@ -160,6 +164,10 @@ public:
 
     void AddOffice(Office office);
 
+    void SetDogSpeed(double speed) {
+        _dogSpeed.emplace(speed);
+    }
+
 private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
 
@@ -167,6 +175,7 @@ private:
     std::string name_;
     Roads roads_;
     Buildings buildings_;
+    std::optional<double> _dogSpeed;
 
     OfficeIdToIndex warehouse_id_to_index_;
     Offices offices_;
@@ -218,6 +227,14 @@ class GameSession {
     const std::vector<Dog>& GetDogs(){
         return _dogs;
     }
+
+    Dog* GetDogByPlayerId(int playerId) {
+        auto dog = rs::find_if(_dogs, [playerId](auto arg){return arg.playerId == playerId;});
+
+        return dog == _dogs.end()
+            ?  nullptr
+            : &(*dog);
+    }
 };
 
 class Game {
@@ -237,14 +254,17 @@ public:
         return nullptr;
     }
 
-    std::optional<GameSession> GetSession(int sessionId){
+    GameSession* GetSession(int sessionId){
         auto result = rs::find_if(_sessions, [sessionId](auto arg){return arg.GetId() == sessionId;});
 
-        return result == _sessions.end() ? std::nullopt : std::optional(*result);
+        return result == _sessions.end() ? nullptr : &(*result);
     }
 
-    std::optional<GameSession> FindSessionByMapId(const Map::Id& mapId);
+    GameSession* FindSessionByMapId(const Map::Id& mapId);
     GameSession& CreateSession(const Map::Id& mapId);
+
+    void SetDefaultDogSpeed(double speed) { _defaultDogSpeed = speed; }
+    int GetDefaultDogSpeed() const {return _defaultDogSpeed; }
 
 private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;
@@ -254,6 +274,7 @@ private:
     MapIdToIndex map_id_to_index_;
 
     std::vector<GameSession> _sessions;
+    double _defaultDogSpeed = 1;
 };
 
 }  // namespace model

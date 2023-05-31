@@ -3,6 +3,7 @@
 #include "json_loader.h"
 #include <boost/json.hpp>
 #include <ranges>
+#include <set>
 
 namespace http_handler {
 
@@ -136,7 +137,7 @@ namespace sys = boost::system;
         if (request.method() != http::verb::get && request.method() != http::verb::head){
             auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
 
-            response.set(http::field::allow, "GET, HEAD");
+            response.set(http::field::allow, "GET, HEAD"s);
 
             return response;
         }
@@ -155,13 +156,13 @@ namespace sys = boost::system;
 
         auto session = application.GetSession(player.value().sessionId);
 
-        if (!session.has_value()){
+        if (!session){
             return Json(request, dto::ErrorDto { "sessionNotFound"s, "Session not found"s}, http::status::internal_server_error);
         }
 
         json::object obj;
 
-        for (const auto dog : session.value().GetDogs()){
+        for (const auto dog : session->GetDogs()){
 
             std::string direction;
 
@@ -192,6 +193,53 @@ namespace sys = boost::system;
 
         }
         return Json(request, json::object {{"players"s, obj}});
+    }
+
+    JsonResponse HandlePostPlayerAction(app::Application& application, StringRequest&& request){
+        if (request.method() != http::verb::post){
+            auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
+
+            response.set(http::field::allow, "POST"s);
+
+            return response;
+        }
+
+        auto token = GetAuthToken(request);
+        
+        if (!token.has_value()){
+            return Json(request, dto::ErrorDto {"invalidToken"s, "Authorization header is required"s}, http::status::unauthorized);
+        }
+
+        auto player = application.FindPlayerByToken(*token);
+
+        if (!player){
+            return Json(request, dto::ErrorDto{"unknownToken"s, "Player token has not been found"s}, http::status::unauthorized);
+        }
+
+        if (request[http::field::content_type] != "application/json"s){
+            return Json(request, dto::ErrorDto {"invalidArgument"s, "Invalid content type"s}, http::status::bad_request);
+        }
+
+        sys::error_code ec;
+
+        auto body = json::parse(request.body(), ec);
+        
+        if (ec || !body.as_object().if_contains("move"s)) {
+            return Json(request, dto::ErrorDto{"invalidArgument"s, "Failed to parse action"s}, http::status::bad_request);
+        }
+
+        auto move = json::value_to<std::string>(body.at("move"s));
+
+        std::set<std::string> validValues {"L"s, "R"s, "U"s, "D"s, ""s};
+
+        if (!validValues.contains(move))
+        {
+            return Json(request, dto::ErrorDto{"invalidArgument"s, "Failed to parse action"s}, http::status::bad_request);
+        }
+
+        application.Move(*player, move);
+
+        return Json(request, {});
     }
 
     JsonResponse HandleBadRequest(StringRequest&& request){

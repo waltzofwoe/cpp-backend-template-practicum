@@ -112,4 +112,8 @@ void Application::Move(const Player& player, std::string move){
         return;
     }
 }
+
+void Application::AddTime(int64_t timeDelta){
+    
+}
 }

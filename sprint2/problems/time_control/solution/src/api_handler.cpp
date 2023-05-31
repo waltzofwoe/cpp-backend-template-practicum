@@ -242,6 +242,34 @@ namespace sys = boost::system;
         return Json(request, json::object{});
     }
 
+    JsonResponse HandlePostGameTick(app::Application& application, StringRequest&& request){
+        if (request.method() != http::verb::post){
+            auto response = Json(request, dto::ErrorDto {"invalidMethod"s, "Invalid method"s}, http::status::method_not_allowed);
+
+            response.set(http::field::allow, "POST"s);
+
+            return response;
+        }
+
+        if (request[http::field::content_type] != "application/json"s){
+            return Json(request, dto::ErrorDto {"invalidArgument"s, "Invalid content type"s}, http::status::bad_request);
+        }
+
+        sys::error_code ec;
+
+        auto body = json::parse(request.body(), ec);
+
+        if (ec || !body.as_object().if_contains("timeDelta"s) || !body.at("timeDelta"s).is_int64()){
+            return Json(request, dto::ErrorDto {"invalidArgument"s, "Failed to parse tick request JSON"s}, http::status::bad_request);
+        }
+
+        auto timeDelta = body.at("timeDelta"s).as_int64();
+
+        application.AddTime(timeDelta);
+
+        return Json(request, json::object{});
+    }
+
     JsonResponse HandleBadRequest(StringRequest&& request){
         return Json(request, dto::ErrorDto {"badRequest"s, "Bad request"s}, http::status::bad_request);
     }

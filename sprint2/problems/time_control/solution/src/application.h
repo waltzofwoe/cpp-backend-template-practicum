@@ -40,5 +40,7 @@ namespace app {
         }
 
         void Move(const Player& player, std::string move);
+
+        void AddTime(int64_t timeDelta);
     };
 }

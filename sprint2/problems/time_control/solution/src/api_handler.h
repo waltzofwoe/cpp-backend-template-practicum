@@ -63,6 +63,8 @@ namespace http_handler {
 
     JsonResponse HandlePostPlayerAction(app::Application& application, StringRequest&& request);
 
+    JsonResponse HandlePostGameTick(app::Application& application, StringRequest&& request);
+
     class ApiHandler {
         app::Application& _application;
 
@@ -131,6 +133,14 @@ namespace http_handler {
 
                 writer(response);
 
+                return;
+            }
+
+            if (request.target() == "/api/v1/game/tick"s) {
+                auto response = HandlePostGameTick(_application, std::move(request));
+
+                writer(response);
+                
                 return;
             }
 

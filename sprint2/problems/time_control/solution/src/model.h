@@ -188,18 +188,26 @@ enum Direction {
     EAST
 };
 
+struct Position {
+    double x;
+    double y;
+};
+
+struct Speed {
+    double vx;
+    double vy;
+};
+
 struct Dog {
     std::string name;
     int id;
     int playerId;
-    double x;
-    double y;
-    double speedX;
-    double speedY;
+    Position coord;
+    Speed speed;
     Direction direction;
 
     public:
-    Dog(int id, int playerId) : id { id }, playerId { playerId }, direction{NORTH}, speedX{}, speedY{} {};
+    Dog(int id, int playerId, Position initCoord) : id { id }, playerId { playerId }, direction{NORTH}, speed{}, coord{initCoord} {};
 };
 
 class GameSession {
@@ -218,13 +226,13 @@ class GameSession {
         return _id;
     }
 
-    void AddDog(int playerId) {
+    void AddDog(int playerId, const Position& coord) {
         int dogId = _dogs.size() + 1;
 
-        _dogs.emplace_back(Dog {dogId, playerId});
+        _dogs.emplace_back(Dog{dogId, playerId, coord});
     }
 
-    const std::vector<Dog>& GetDogs(){
+    std::vector<Dog>& GetDogs(){
         return _dogs;
     }
 
@@ -258,6 +266,10 @@ public:
         auto result = rs::find_if(_sessions, [sessionId](auto arg){return arg.GetId() == sessionId;});
 
         return result == _sessions.end() ? nullptr : &(*result);
+    }
+
+    std::vector<GameSession>& GetSessions() {
+        return _sessions;
     }
 
     GameSession* FindSessionByMapId(const Map::Id& mapId);

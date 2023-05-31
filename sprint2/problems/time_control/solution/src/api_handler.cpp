@@ -186,8 +186,8 @@ namespace sys = boost::system;
             }
 
             obj[std::to_string(dog.playerId)] = {
-                {"pos"s, {dog.x, dog.y}},
-                {"speed"s, {dog.speedX, dog.speedY}},
+                {"pos"s, {dog.coord.x, dog.coord.y}},
+                {"speed"s, {dog.speed.vx, dog.speed.vy}},
                 {"dir"s, direction}
             };
 

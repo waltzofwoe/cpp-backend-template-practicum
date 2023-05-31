@@ -3,29 +3,36 @@
 #include "application.h"
 #include "token_generator.h"
 
-namespace rs = std::ranges;
-
 namespace app {
+namespace rs = std::ranges;
 
 using namespace std::literals;
 
 Player Application::JoinGame(const std::string& playerName, const std::string& mapId) {
     tokens::token_generator generator;
 
+    auto map = _game.GetMaps().at(0);
+
+    auto roadStart = map.GetRoads().at(0).GetStart();
+
+    model::Position initPosition {roadStart.x, roadStart.y};
+
     if (auto session = _game.FindSessionByMapId(model::Map::Id{mapId})){
         auto findResult = rs::find_if(_players, [playerName, &session](auto arg){return arg.name == playerName && arg.sessionId == session->GetId();}); 
         
-        // если игрока нет в сессии
-        if (findResult == _players.end()) {
-            Player player {_players.size() +1, playerName, session->GetId(), generator.create()};
+        // если игрок есть - возвращаем что есть
+        if (findResult != _players.end()) {
+            return *findResult;
 
-            session->AddDog(player.id);
-
-            return _players.emplace_back(player);
         }
 
-        // если игрок есть - возвращаем что есть
-        return *findResult;
+        // если игрока нет в сессии
+
+        Player player {_players.size() +1, playerName, session->GetId(), generator.create()};
+
+        session->AddDog(player.id, initPosition);
+
+        return _players.emplace_back(player);
     }
 
     // сессии нет - создаем
@@ -34,7 +41,7 @@ Player Application::JoinGame(const std::string& playerName, const std::string& m
 
     Player player {_players.size() +1, playerName, session.GetId(), generator.create()};
 
-    session.AddDog(player.id);
+    session.AddDog(player.id, initPosition);
 
     return _players.emplace_back(player);
 }
@@ -78,42 +85,56 @@ void Application::Move(const Player& player, std::string move){
 
     if (move.empty())
     {
-        dog->speedX = 0;
-        dog->speedY = 0;
+        dog->speed.vx = 0;
+        dog->speed.vy = 0;
+        dog->direction = model::NORTH;
 
         return;
     }
 
     if (move == "L"s){
-        dog->speedX = -1 * speed;
-        dog->speedY = 0;
+        dog->speed.vx = -1 * speed;
+        dog->speed.vy = 0;
+        dog->direction = model::WEST;
 
         return;
     }
 
     if (move == "R"s){
-        dog->speedX = speed;
-        dog->speedY = 0;
+        dog->speed.vx = speed;
+        dog->speed.vy = 0;
+        dog->direction = model::EAST;
 
         return;
     }
 
     if (move == "U"s){
-        dog->speedX = 0;
-        dog->speedY = -1 * speed;
+        dog->speed.vx = 0;
+        dog->speed.vy = -1 * speed;
+        dog->direction = model::NORTH;
 
         return;
     }
 
     if (move == "D"s) {
-        dog->speedX = 0;
-        dog->speedY = speed;
+        dog->speed.vx = 0;
+        dog->speed.vy = speed;
+        dog->direction = model::SOUTH;
 
         return;
     }
 }
 
 void Application::AddTime(int64_t timeDelta){
-    
+    auto& sessions = _game.GetSessions();
+
+    for(auto& session : sessions) {
+        auto& dogs = session.GetDogs();
+
+        for (auto& dog : dogs){
+            dog.coord.x += dog.speed.vx * (timeDelta / 1000.0);
+            dog.coord.y += dog.speed.vy * (timeDelta / 1000.0);
+        }
+    }
 }
 }

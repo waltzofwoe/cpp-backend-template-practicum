@@ -61,14 +61,19 @@ int main(int argc, const char* argv[]) {
             }
         });
 
+        auto apiStrand = net::make_strand(ioc);
+
         // 4. Создаём обработчик HTTP-запросов и связываем его с моделью игр
-        http_handler::RequestHandler handler{http_handler::ApiHandler {application}, http_handler::StaticFileRequestHandler(argv[2])};
+
+        auto handler = std::make_shared<http_handler::RequestHandler>(http_handler::ApiHandler {application}, http_handler::StaticFileRequestHandler(argv[2]), apiStrand);
 
         // 5. Запустить обработчик HTTP-запросов, делегируя их обработчику запросов
         const auto address = net::ip::make_address("0.0.0.0");
         constexpr net::ip::port_type port = 8080;
 
-        http_server::ServeHttp(ioc, {address, port}, std::forward<http_handler::RequestHandler>(handler));
+        http_server::ServeHttp(ioc, {address, port}, [handler](auto&& request, auto&& writer){
+            (*handler)(std::forward<decltype(request)>(request), std::forward<decltype(writer)>(writer));
+        });
         
         // инициализация логгера
         logger::InitBoostLogs();

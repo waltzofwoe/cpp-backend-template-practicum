@@ -24,6 +24,7 @@ namespace fs = std::filesystem;
 namespace sys = boost::system;
 namespace json = boost::json;
 namespace logs = boost::log;
+namespace net = boost::asio;
 
 using StringResponse = http::response<http::string_body>;
 using EmptyResponse = http::response<http::empty_body>;
@@ -149,28 +150,38 @@ private:
     fs::path wwwroot_;
 };
 
-class RequestHandler {
+class RequestHandler :  public std::enable_shared_from_this<RequestHandler> {
 public:
 
     using JsonResponse = http::response<http::string_body>;
     using StatusCodeResponse = http::response<http::empty_body>;
     using FileResponse = http::response<http::file_body>;
+    using Strand = boost::asio::strand<boost::asio::io_context::executor_type>;
 
-    explicit RequestHandler(ApiHandler&& apiHandler, StaticFileRequestHandler&& staticHandler) :
+    explicit RequestHandler(ApiHandler&& apiHandler, StaticFileRequestHandler&& staticHandler, Strand strand) :
         _apiHandler{std::forward<ApiHandler>(apiHandler)}, 
-        _staticFileHandler(std::forward<StaticFileRequestHandler>(staticHandler)) {}
+        _staticFileHandler(std::forward<StaticFileRequestHandler>(staticHandler)),
+        _strand {strand} {}
+        
 
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
 
     RequestHandler(RequestHandler&& other) : 
         _apiHandler(std::forward<ApiHandler>(other._apiHandler)),
-        _staticFileHandler(std::forward<StaticFileRequestHandler>(other._staticFileHandler)) {}
+        _staticFileHandler(std::forward<StaticFileRequestHandler>(other._staticFileHandler)),
+        _strand { other._strand} {}
 
     template <typename Body, typename Allocator, typename ResponseWriter>
     void operator()(http::request<Body, http::basic_fields<Allocator>>&& request, ResponseWriter&& writer) {
         if (_apiHandler.IsApiRequest(request.target())){
-            _apiHandler(std::move(request), std::forward<ResponseWriter>(writer));
+            auto handle = [self = shared_from_this(), req = std::forward<decltype(request)>(request), 
+                           writer] () mutable {
+                assert(self->_strand.running_in_this_thread());
+                self->_apiHandler(std::move(req), writer);
+            };
+
+            net::dispatch(_strand, handle);
 
             return;
         }
@@ -180,6 +191,7 @@ public:
 private:
     ApiHandler _apiHandler;
     StaticFileRequestHandler _staticFileHandler;
+    Strand _strand;
 };
 
 }  // namespace http_handler

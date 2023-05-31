@@ -163,7 +163,7 @@ private:
     }
 
     void AsyncRunSession(tcp::socket&& socket){
-        std::make_shared<Session<RequestHandler>>(std::move(socket), std::forward<RequestHandler>(request_handler_))->Run();
+        std::make_shared<Session<RequestHandler>>(std::move(socket), request_handler_)->Run();
     }
 };
 

@@ -51,6 +51,10 @@ model::Game LoadGame(const std::filesystem::path& json_path) {
         game.AddMap(map);
     }
 
+    if (json_config.as_object().if_contains("defaultDogSpeed"s) && json_config.at("defaultDogSpeed"s).is_double()){
+        game.SetDefaultDogSpeed(json_config.at("defaultDogSpeed"s).as_double());
+    }
+
     return game;
 }
 
@@ -145,6 +149,10 @@ Map tag_invoke(json::value_to_tag<Map>, const json::value& jv){
 
     for (const auto& office : offices){
         map.AddOffice(office);
+    }
+
+    if (jv.as_object().if_contains("dogSpeed"s) && jv.at("dogSpeed"s).is_double()){
+        map.SetDogSpeed(jv.at("dogSpeed"s).as_double());
     }
 
     return map;

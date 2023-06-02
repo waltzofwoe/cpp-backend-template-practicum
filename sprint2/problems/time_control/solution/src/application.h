@@ -12,6 +12,13 @@ namespace app {
         std::string token;
     };
 
+    struct Collision {
+        double x_min;
+        double x_max;
+        double y_min;
+        double y_max;
+    };
+
     class Application {
         std::vector<Player> _players;
         model::Game& _game;
@@ -42,5 +49,7 @@ namespace app {
         void Move(const Player& player, std::string move);
 
         void AddTime(int64_t timeDelta);
+
+        std::vector<Collision> GetCollisionsAtPosition(model::Position& position, model::Map::Id mapId);
     };
 }

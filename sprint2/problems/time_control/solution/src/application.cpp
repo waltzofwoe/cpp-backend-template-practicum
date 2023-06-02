@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <ranges>
+#include <utility>
 #include "application.h"
 #include "token_generator.h"
 
 namespace app {
 namespace rs = std::ranges;
+namespace rv = rs::views;
 
 using namespace std::literals;
 
@@ -131,10 +133,69 @@ void Application::AddTime(int64_t timeDelta){
     for(auto& session : sessions) {
         auto& dogs = session.GetDogs();
 
+        auto map = session.GetMapId();
+
+
         for (auto& dog : dogs){
+            auto collisions = GetCollisionsAtPosition(dog.coord, map);
+
+            // расчет новой координаты по оси x
             dog.coord.x += dog.speed.vx * (timeDelta / 1000.0);
+
+            // проверка коллизий по x
+            auto xmin = rs::min(collisions | rv::transform(&Collision::x_min));
+
+            auto xmax = rs::max(collisions | rv::transform(&Collision::x_max));
+
+            if (dog.coord.x < xmin || dog.coord.x > xmax){
+                dog.coord.x = dog.coord.x < xmin ? xmin : xmax;
+                dog.speed.vx = 0;
+            }
+
+            // расчет новой координаты по y
+
             dog.coord.y += dog.speed.vy * (timeDelta / 1000.0);
+
+            auto ymin = rs::min(collisions | rv::transform(&Collision::y_min));
+            auto ymax = rs::max(collisions | rv::transform(&Collision::y_max));
+
+            if (dog.coord.x < ymin || dog.coord.x > ymax){
+                dog.coord.y = dog.coord.y < ymin ? ymin : ymax;
+                dog.speed.vy = 0;
+            }
         }
     }
+}
+
+double getD(model::Position a, model::Position b, model::Position p){
+    return (b.x - a.x) * (p.y - a.y) - (p.x - a.x) * (b.y - a.y);
+}
+
+std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& position, model::Map::Id mapId){
+    auto roads = _game.FindMap(mapId)->GetRoads();
+
+    const auto delta = 0.4;
+
+    std::vector<Collision> result;
+
+    for(const auto& road: roads) {
+        double delta = 0.4;
+
+        model::Position a{road.GetStart().x - delta, road.GetStart().y - delta};
+        model::Position b{road.GetEnd().x + delta, road.GetEnd().y + delta};
+
+        std::vector<std::pair<model::Position, model::Position>> lines;
+
+        lines.emplace_back(std::pair{model::Position{a.x, a.y}, model::Position{a.x, b.y}});
+        lines.emplace_back(std::pair{model::Position{a.x, b.y}, model::Position{b.x, b.y}});
+        lines.emplace_back(std::pair{model::Position{b.x, b.y}, model::Position{b.x, a.y}});
+        lines.emplace_back(std::pair{model::Position{b.x, a.y}, model::Position{a.x, a.y}});
+
+        if (rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) > 0;})){
+            result.emplace_back(Collision{a.x, b.x, a.y, b.y});
+        }
+    }
+
+    return result;
 }
 }

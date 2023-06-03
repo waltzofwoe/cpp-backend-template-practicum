@@ -159,7 +159,7 @@ void Application::AddTime(int64_t timeDelta){
             auto ymin = rs::min(collisions | rv::transform(&Collision::y_min));
             auto ymax = rs::max(collisions | rv::transform(&Collision::y_max));
 
-            if (dog.coord.x < ymin || dog.coord.x > ymax){
+            if (dog.coord.y < ymin || dog.coord.y > ymax){
                 dog.coord.y = dog.coord.y < ymin ? ymin : ymax;
                 dog.speed.vy = 0;
             }

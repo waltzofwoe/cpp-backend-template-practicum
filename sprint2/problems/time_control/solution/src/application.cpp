@@ -167,6 +167,7 @@ void Application::AddTime(int64_t timeDelta){
     }
 }
 
+/// 
 double getD(model::Position a, model::Position b, model::Position p){
     return (b.x - a.x) * (p.y - a.y) - (p.x - a.x) * (b.y - a.y);
 }
@@ -179,19 +180,21 @@ std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& pos
     std::vector<Collision> result;
 
     for(const auto& road: roads) {
-        double delta = 0.4;
-
         model::Position a{road.GetStart().x - delta, road.GetStart().y - delta};
         model::Position b{road.GetEnd().x + delta, road.GetEnd().y + delta};
 
         std::vector<std::pair<model::Position, model::Position>> lines;
 
+        // строим прямоугольник по часовой стрелке
         lines.emplace_back(std::pair{model::Position{a.x, a.y}, model::Position{a.x, b.y}});
         lines.emplace_back(std::pair{model::Position{a.x, b.y}, model::Position{b.x, b.y}});
         lines.emplace_back(std::pair{model::Position{b.x, b.y}, model::Position{b.x, a.y}});
         lines.emplace_back(std::pair{model::Position{b.x, a.y}, model::Position{a.x, a.y}});
 
-        if (rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) > 0;})){
+        // собака внутри прямоугольника, если все точки справа от граней (поскольку построение идет по часовой стрелке)
+        auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) < 0;});
+
+        if (dogOnRoad) {
             result.emplace_back(Collision{a.x, b.x, a.y, b.y});
         }
     }

@@ -75,7 +75,7 @@ namespace http_handler {
 
         ApiHandler(ApiHandler&& other) : _application (other._application) {};
 
-        explicit ApiHandler(app::Application& app, bool disableTick) : _application {app} {};
+        explicit ApiHandler(app::Application& app, bool disableTick) : _application {app}, _disableTick {disableTick} {};
         
         bool IsApiRequest(std::string path) {
             return path.starts_with("/api/"s);

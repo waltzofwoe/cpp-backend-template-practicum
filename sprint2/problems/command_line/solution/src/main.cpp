@@ -30,7 +30,7 @@ struct Args {
     std::string www_root;
     bool randomize_spawn_points;
 
-    Args() : tick_period{}, config_file{}, www_root{}, randomize_spawn_points{false} {};
+    Args() : tick_period{0}, config_file{}, www_root{}, randomize_spawn_points{false} {};
 };
 
 [[nodiscard]] std::optional<Args> ParseCommandLine(int argc, const char* const argv[]) {
@@ -57,13 +57,14 @@ struct Args {
         return std::nullopt;
     }
 
-    if (vm.contains("tick-period") && vm.at("tick-period").as<int>() > 0){
-        args.has_tick_period = true;
-    }
+    if (args.has_tick_period = vm.contains("tick-period")){
+        if (args.tick_period <= 0)
+        {
+            throw std::runtime_error("invalid tick-period value");
+        }
+    };
 
-    if (vm.contains("randomize-spawn-points")){
-        args.randomize_spawn_points = true;
-    }
+    args.randomize_spawn_points = vm.contains("randomize-spawn-points");
 
     return args;
 } 

@@ -144,7 +144,6 @@ void Application::AddTime(int64_t timeDelta){
 
             // проверка коллизий по x
             auto xmin = rs::min(collisions | rv::transform(&Collision::x_min));
-
             auto xmax = rs::max(collisions | rv::transform(&Collision::x_max));
 
             if (dog.coord.x < xmin || dog.coord.x > xmax){
@@ -195,7 +194,14 @@ std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& pos
         auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) <= 0;});
 
         if (dogOnRoad) {
-            result.emplace_back(Collision{a.x, b.x, a.y, b.y});
+            Collision c;
+
+            c.x_min = a.x < b.x ? a.x : b.x;
+            c.x_max = a.x > b.x ? a.x : b.x;
+            c.y_min = a.y < b.y ? a.y : b.y;
+            c.y_max = a.y < b.y ? a.y : b.y;
+
+            result.emplace_back(c);
         }
     }
 

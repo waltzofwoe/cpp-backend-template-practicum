@@ -31,6 +31,8 @@ add_executable(game_server
 	src/api_handler.cpp
 	src/application.h
 	src/application.cpp
+	src/ticker.h
+	src/ticker.cpp
 )
 target_link_libraries(game_server PRIVATE Threads::Threads)
 target_link_libraries(game_server PRIVATE CONAN_PKG::boost)

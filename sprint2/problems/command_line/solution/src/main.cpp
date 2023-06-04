@@ -10,6 +10,7 @@
 #include "request_handler.h"
 #include "logger.h"
 #include "application.h"
+#include "ticker.h"
 #include <boost/log/utility/manipulators/add_value.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/program_options.hpp>
@@ -24,6 +25,7 @@ namespace {
 
 struct Args {
     int tick_period;
+    bool has_tick_period;
     std::string config_file;
     std::string www_root;
     bool randomize_spawn_points;
@@ -53,6 +55,10 @@ struct Args {
     if (vm.contains("help"s) || !vm.contains("config-file") || !vm.contains("www-root")) {
         std::cout << desc;
         return std::nullopt;
+    }
+
+    if (vm.contains("tick-period") && vm.at("tick-period").as<int>() > 0){
+        args.has_tick_period = true;
     }
 
     return args;
@@ -101,9 +107,15 @@ int main(int argc, const char* argv[]) {
 
         auto apiStrand = net::make_strand(ioc);
 
+        auto timer = std::make_shared<app::ApplicationUpdateTimer>(apiStrand, application, std::chrono::milliseconds(args->tick_period));
+
+        if (args->has_tick_period){
+            timer->Start();
+        }
+
         // 4. Создаём обработчик HTTP-запросов и связываем его с моделью игр
 
-        auto handler = std::make_shared<http_handler::RequestHandler>(http_handler::ApiHandler {application}, http_handler::StaticFileRequestHandler(args->www_root), apiStrand);
+        auto handler = std::make_shared<http_handler::RequestHandler>(http_handler::ApiHandler {application, args->has_tick_period}, http_handler::StaticFileRequestHandler(args->www_root), apiStrand);
 
         // 5. Запустить обработчик HTTP-запросов, делегируя их обработчику запросов
         const auto address = net::ip::make_address("0.0.0.0");

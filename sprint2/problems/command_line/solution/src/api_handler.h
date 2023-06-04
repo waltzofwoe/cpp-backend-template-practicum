@@ -73,7 +73,7 @@ namespace http_handler {
         ApiHandler(const ApiHandler&) = delete;
         ApiHandler& operator=(const ApiHandler&) = delete;
 
-        ApiHandler(ApiHandler&& other) : _application (other._application) {};
+        ApiHandler(ApiHandler&& other) : _application (other._application), _disableTick {other._disableTick} {};
 
         explicit ApiHandler(app::Application& app, bool disableTick) : _application {app}, _disableTick {disableTick} {};
         
@@ -137,7 +137,7 @@ namespace http_handler {
                 return;
             }
 
-            if (request.target() == "/api/v1/game/tick"s && !_disableTick) {
+            if ((!_disableTick) && (request.target() == "/api/v1/game/tick"s)) {
                 auto response = HandlePostGameTick(_application, std::move(request));
 
                 writer(response);

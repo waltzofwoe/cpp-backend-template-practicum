@@ -179,29 +179,24 @@ std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& pos
     std::vector<Collision> result;
 
     for(const auto& road: roads) {
-        model::Position a{road.GetStart().x - delta, road.GetStart().y - delta};
-        model::Position b{road.GetEnd().x + delta, road.GetEnd().y + delta};
+        auto x1 = std::min(road.GetStart().x, road.GetEnd().x) - delta;
+        auto x2 = std::max(road.GetStart().x, road.GetEnd().x) + delta;
+        auto y1 = std::min(road.GetStart().y, road.GetEnd().y) - delta;
+        auto y2 = std::max(road.GetStart().y, road.GetEnd().y) + delta;
 
         std::vector<std::pair<model::Position, model::Position>> lines;
 
         // строим прямоугольник по часовой стрелке
-        lines.emplace_back(std::pair{model::Position{a.x, a.y}, model::Position{a.x, b.y}});
-        lines.emplace_back(std::pair{model::Position{a.x, b.y}, model::Position{b.x, b.y}});
-        lines.emplace_back(std::pair{model::Position{b.x, b.y}, model::Position{b.x, a.y}});
-        lines.emplace_back(std::pair{model::Position{b.x, a.y}, model::Position{a.x, a.y}});
+        lines.emplace_back(std::pair{model::Position{x1, y1}, model::Position{x1, y2}});
+        lines.emplace_back(std::pair{model::Position{x1, y2}, model::Position{x2, y2}});
+        lines.emplace_back(std::pair{model::Position{x2, y2}, model::Position{x2, y1}});
+        lines.emplace_back(std::pair{model::Position{x2, y1}, model::Position{x1, y1}});
 
         // собака внутри прямоугольника, если все точки справа от граней (поскольку построение идет по часовой стрелке)
         auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) <= 0;});
 
         if (dogOnRoad) {
-            Collision c;
-
-            c.x_min = a.x < b.x ? a.x : b.x;
-            c.x_max = a.x > b.x ? a.x : b.x;
-            c.y_min = a.y < b.y ? a.y : b.y;
-            c.y_max = a.y > b.y ? a.y : b.y;
-
-            result.emplace_back(c);
+            result.emplace_back(Collision {x1,x2,y1,y2});
         }
     }
 

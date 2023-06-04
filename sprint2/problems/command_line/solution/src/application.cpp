@@ -144,7 +144,6 @@ void Application::AddTime(int64_t timeDelta){
 
             // проверка коллизий по x
             auto xmin = rs::min(collisions | rv::transform(&Collision::x_min));
-
             auto xmax = rs::max(collisions | rv::transform(&Collision::x_max));
 
             if (dog.coord.x < xmin || dog.coord.x > xmax){
@@ -159,7 +158,7 @@ void Application::AddTime(int64_t timeDelta){
             auto ymin = rs::min(collisions | rv::transform(&Collision::y_min));
             auto ymax = rs::max(collisions | rv::transform(&Collision::y_max));
 
-            if (dog.coord.x < ymin || dog.coord.x > ymax){
+            if (dog.coord.y < ymin || dog.coord.y > ymax){
                 dog.coord.y = dog.coord.y < ymin ? ymin : ymax;
                 dog.speed.vy = 0;
             }
@@ -167,6 +166,7 @@ void Application::AddTime(int64_t timeDelta){
     }
 }
 
+/// 
 double getD(model::Position a, model::Position b, model::Position p){
     return (b.x - a.x) * (p.y - a.y) - (p.x - a.x) * (b.y - a.y);
 }
@@ -179,20 +179,24 @@ std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& pos
     std::vector<Collision> result;
 
     for(const auto& road: roads) {
-        double delta = 0.4;
-
-        model::Position a{road.GetStart().x - delta, road.GetStart().y - delta};
-        model::Position b{road.GetEnd().x + delta, road.GetEnd().y + delta};
+        auto x1 = std::min(road.GetStart().x, road.GetEnd().x) - delta;
+        auto x2 = std::max(road.GetStart().x, road.GetEnd().x) + delta;
+        auto y1 = std::min(road.GetStart().y, road.GetEnd().y) - delta;
+        auto y2 = std::max(road.GetStart().y, road.GetEnd().y) + delta;
 
         std::vector<std::pair<model::Position, model::Position>> lines;
 
-        lines.emplace_back(std::pair{model::Position{a.x, a.y}, model::Position{a.x, b.y}});
-        lines.emplace_back(std::pair{model::Position{a.x, b.y}, model::Position{b.x, b.y}});
-        lines.emplace_back(std::pair{model::Position{b.x, b.y}, model::Position{b.x, a.y}});
-        lines.emplace_back(std::pair{model::Position{b.x, a.y}, model::Position{a.x, a.y}});
+        // строим прямоугольник по часовой стрелке
+        lines.emplace_back(std::pair{model::Position{x1, y1}, model::Position{x1, y2}});
+        lines.emplace_back(std::pair{model::Position{x1, y2}, model::Position{x2, y2}});
+        lines.emplace_back(std::pair{model::Position{x2, y2}, model::Position{x2, y1}});
+        lines.emplace_back(std::pair{model::Position{x2, y1}, model::Position{x1, y1}});
 
-        if (rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) > 0;})){
-            result.emplace_back(Collision{a.x, b.x, a.y, b.y});
+        // собака внутри прямоугольника, если все точки справа от граней (поскольку построение идет по часовой стрелке)
+        auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) <= 0;});
+
+        if (dogOnRoad) {
+            result.emplace_back(Collision {x1,x2,y1,y2});
         }
     }
 

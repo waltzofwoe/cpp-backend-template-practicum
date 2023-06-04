@@ -22,9 +22,13 @@ namespace app {
     class Application {
         std::vector<Player> _players;
         model::Game& _game;
+        bool _randomizeSpawnPoints;
+
+        std::vector<Collision> GetCollisionsAtPosition(model::Position& position, model::Map::Id mapId);
+        model::Position GetSpawnPoint(const model::Map* map);
 
         public:
-        explicit Application(model::Game& game) : _game { game } {};
+        explicit Application(model::Game& game, bool randomizeSpawnPoints) : _game { game }, _randomizeSpawnPoints{randomizeSpawnPoints} {};
 
         Player JoinGame(const std::string& playerName, const std::string& mapId);
 
@@ -49,7 +53,5 @@ namespace app {
         void Move(const Player& player, std::string move);
 
         void AddTime(int64_t timeDelta);
-
-        std::vector<Collision> GetCollisionsAtPosition(model::Position& position, model::Map::Id mapId);
     };
 }

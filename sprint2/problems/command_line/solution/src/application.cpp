@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <iostream>
 #include <ranges>
+#include <random>
 #include <utility>
 #include "application.h"
 #include "token_generator.h"
@@ -13,11 +15,9 @@ using namespace std::literals;
 Player Application::JoinGame(const std::string& playerName, const std::string& mapId) {
     tokens::token_generator generator;
 
-    auto map = _game.GetMaps().at(0);
+    auto map = _game.FindMap(model::Map::Id{mapId});
 
-    auto roadStart = map.GetRoads().at(0).GetStart();
-
-    model::Position initPosition {roadStart.x, roadStart.y};
+    model::Position spawnPoint = GetSpawnPoint(map);
 
     if (auto session = _game.FindSessionByMapId(model::Map::Id{mapId})){
         auto findResult = rs::find_if(_players, [playerName, &session](auto arg){return arg.name == playerName && arg.sessionId == session->GetId();}); 
@@ -25,14 +25,13 @@ Player Application::JoinGame(const std::string& playerName, const std::string& m
         // если игрок есть - возвращаем что есть
         if (findResult != _players.end()) {
             return *findResult;
-
         }
 
         // если игрока нет в сессии
 
         Player player {_players.size() +1, playerName, session->GetId(), generator.create()};
 
-        session->AddDog(player.id, initPosition);
+        session->AddDog(player.id, spawnPoint);
 
         return _players.emplace_back(player);
     }
@@ -43,7 +42,7 @@ Player Application::JoinGame(const std::string& playerName, const std::string& m
 
     Player player {_players.size() +1, playerName, session.GetId(), generator.create()};
 
-    session.AddDog(player.id, initPosition);
+    session.AddDog(player.id, spawnPoint);
 
     return _players.emplace_back(player);
 }
@@ -139,6 +138,10 @@ void Application::AddTime(int64_t timeDelta){
         for (auto& dog : dogs){
             auto collisions = GetCollisionsAtPosition(dog.coord, map);
 
+            if (collisions.empty()){
+                std::cout << "add_time:" << dog.coord.x << " " << dog.coord.y << std::endl;
+            }
+
             // расчет новой координаты по оси x
             dog.coord.x += dog.speed.vx * (timeDelta / 1000.0);
 
@@ -201,5 +204,37 @@ std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& pos
     }
 
     return result;
+}
+
+model::Position Application::GetSpawnPoint(const model::Map* map){
+    if (!_randomizeSpawnPoints){
+        auto roadStart = map->GetRoads().at(0).GetStart();
+
+        return model::Position { (double)roadStart.x, (double)roadStart.y};
+    }
+
+    auto roads = map->GetRoads();
+
+    auto roadIndex = std::rand() % roads.size();
+
+    auto road = roads[roadIndex];
+
+    int x, y = 0;
+
+    if (road.IsHorizontal()){
+        auto delta = std::abs(road.GetStart().x - road.GetEnd().x);
+        auto initX = std::min(road.GetStart().x, road.GetEnd().x);
+        x = std::rand() % delta + initX;
+        y = road.GetStart().y;
+    }
+
+    if (road.IsVertical()){
+        auto delta = std::abs(road.GetStart().y - road.GetEnd().y);
+        auto initY = std::min(road.GetStart().y, road.GetEnd().y);
+        x = road.GetStart().x;
+        y = std::rand() % delta + initY;
+    }
+
+    return model::Position{(double)x, (double)y};
 }
 }

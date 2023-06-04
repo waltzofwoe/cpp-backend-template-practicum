@@ -45,7 +45,7 @@ struct Args {
         ("tick-period,t", po::value(&args.tick_period)->value_name("milliseconds"s), "set tick period")
         ("config-file,c", po::value(&args.config_file)->value_name("file"s)->required(), "set config file path")
         ("www-root,w", po::value(&args.www_root)->value_name("dir"s)->required(), "set static files root")
-        ("randomize-spawn-points", po::value(&args.randomize_spawn_points), "spawn dogs at random positions");
+        ("randomize-spawn-points", "spawn dogs at random positions");
 
     po::variables_map vm;
 
@@ -59,6 +59,10 @@ struct Args {
 
     if (vm.contains("tick-period") && vm.at("tick-period").as<int>() > 0){
         args.has_tick_period = true;
+    }
+
+    if (vm.contains("randomize-spawn-points")){
+        args.randomize_spawn_points = true;
     }
 
     return args;
@@ -89,7 +93,7 @@ int main(int argc, const char* argv[]) {
         // 1. Загружаем карту из файла и построить модель игры
         auto game = json_loader::LoadGame(args->config_file);
 
-        app::Application application { game };
+        app::Application application { game, args->randomize_spawn_points};
 
         // 2. Инициализируем io_context
         const unsigned num_threads = std::thread::hardware_concurrency();

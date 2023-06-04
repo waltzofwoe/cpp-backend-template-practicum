@@ -192,7 +192,7 @@ std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& pos
         lines.emplace_back(std::pair{model::Position{b.x, a.y}, model::Position{a.x, a.y}});
 
         // собака внутри прямоугольника, если все точки справа от граней (поскольку построение идет по часовой стрелке)
-        auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) < 0;});
+        auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) <= 0;});
 
         if (dogOnRoad) {
             result.emplace_back(Collision{a.x, b.x, a.y, b.y});

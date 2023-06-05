@@ -167,7 +167,7 @@ void Application::AddTime(int64_t timeDelta){
 }
 
 /// 
-double getD(model::Position a, model::Position b, model::Position p){
+double GetD(model::Position a, model::Position b, model::Position p){
     return (b.x - a.x) * (p.y - a.y) - (p.x - a.x) * (b.y - a.y);
 }
 
@@ -193,7 +193,7 @@ std::vector<Collision> Application::GetCollisionsAtPosition(model::Position& pos
         lines.emplace_back(std::pair{model::Position{x2, y1}, model::Position{x1, y1}});
 
         // собака внутри прямоугольника, если все точки справа от граней (поскольку построение идет по часовой стрелке)
-        auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return getD(arg.first, arg.second, position) <= 0;});
+        auto dogOnRoad = rs::all_of(lines, [&position](auto arg){ return GetD(arg.first, arg.second, position) <= 0;});
 
         if (dogOnRoad) {
             result.emplace_back(Collision {x1,x2,y1,y2});

@@ -47,8 +47,8 @@ model::Game LoadGame(const std::filesystem::path& json_path) {
 
     auto maps = LoadMaps(json_config);
 
-    for (const auto& map : maps) {
-        game.AddMap(map);
+    for (auto&& map : maps) {
+        game.AddMap(std::move(map));
     }
 
     if (json_config.as_object().if_contains("defaultDogSpeed"s) && json_config.at("defaultDogSpeed"s).is_double()){
@@ -147,8 +147,8 @@ Map tag_invoke(json::value_to_tag<Map>, const json::value& jv){
 
     auto offices = json::value_to<std::vector<Office>>(jv.at("offices"s));
 
-    for (const auto& office : offices){
-        map.AddOffice(office);
+    for (auto&& office : offices){
+        map.AddOffice(std::move(office));
     }
 
     if (jv.as_object().if_contains("dogSpeed"s) && jv.at("dogSpeed"s).is_double()){

@@ -7,12 +7,11 @@
 
 #define BOOST_BEAST_USE_STD_STRING_VIEW
 
-using namespace std::literals;
-
-namespace http = boost::beast::http;
-namespace json = boost::json;
-
 namespace http_handler {
+    namespace http = boost::beast::http;
+    namespace json = boost::json;
+
+    using namespace std::literals;
     using StringRequest = http::request<http::string_body>;
     using JsonResponse = http::response<http::string_body>;
 

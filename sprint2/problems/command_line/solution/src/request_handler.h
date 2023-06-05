@@ -66,7 +66,7 @@ StringResponse InternalError(const http::request<Body, http::basic_fields<Alloca
 
 class StaticFileRequestHandler {
 public:
-    StaticFileRequestHandler(fs::path wwwroot);
+    explicit StaticFileRequestHandler(fs::path wwwroot);
 
     StaticFileRequestHandler(const StaticFileRequestHandler&) =delete;
     StaticFileRequestHandler& operator=(const StaticFileRequestHandler&) = delete;

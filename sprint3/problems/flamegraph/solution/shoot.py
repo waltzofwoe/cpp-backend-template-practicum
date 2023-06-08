@@ -26,7 +26,7 @@ def start_perf(pid):
     return "perf record -p {pid} -o perf.data"
 
 def start_flamegraph():
-    return "perf script -i perf.data | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl"
+    return "perf script -i perf.data | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > graph.svg"
 
 def run(command, output=None):
     process = subprocess.Popen(shlex.split(command), stdout=output, stderr=subprocess.DEVNULL)
@@ -57,7 +57,7 @@ perf = run(start_perf(server.pid))
 make_shots()
 stop(perf)
 stop(server)
-flamegraph = run(start_flamegraph(), "graph.svg")
+flamegraph = run(start_flamegraph())
 flamegraph.wait()
 time.sleep(1)
 print('Job done')

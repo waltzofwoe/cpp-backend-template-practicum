@@ -22,7 +22,7 @@ def start_server():
     return parser.parse_args().server
 
 def start_perf(pid):
-    return f"perf record -p {pid} -o perf.data"
+    return f"perf record -g -p {pid} -o perf.data"
 
 def start_flamegraph():
     svg = open("graph.svg", "w")
